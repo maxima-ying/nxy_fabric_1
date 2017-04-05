@@ -1,0 +1,13 @@
+{
+  "steps": [
+    {"id": "00", "name": "票据托管", "actions": {"next": {"id": "01", "action": "保存"}}},
+    {"id": "01", "name": "接受托管", "actions": {"next": {"id": "02", "action": "接受托管"}}},
+    {"id": "02", "name": "卖方申请", "actions": {"next": {"id": "03", "action": "提出申请"}}},
+    {"id": "03", "name": "卖方复核", "actions": {"next": {"id": "04", "action": "卖方复核"}, "back": {"id": "02", "action": "驳回"}}},
+    {"id": "04", "name": "卖方审批", "actions": {"next": {"id": "05", "action": "卖方审批"}, "back": {"id": "02", "action": "驳回"}}},
+    {"id": "05", "name": "买方审核", "actions": {"next": {"id": "06", "action": "买方审核"}, "back": {"id": "02", "action": "驳回"}}},
+    {"id": "06", "name": "买方审批", "actions": {"next": {"id": "07", "action": "买方审批"}, "back": {"id": "05", "action": "驳回"}}},
+    {"id": "07", "name": "清算平台", "actions": {"next": {"id": "08", "action": "清算处理"}}},
+    {"id": "08", "name": "完成"}
+  ]
+}

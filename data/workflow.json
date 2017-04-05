@@ -1,0 +1,13 @@
+{
+  "steps": [
+    {"id": "00", "name": "手形保管", "actions": {"next": {"id": "01", "action": "保存"}}},
+    {"id": "01", "name": "保管", "actions": {"next": {"id": "02", "action": "保管"}}},
+    {"id": "02", "name": "支払申込", "actions": {"next": {"id": "03", "action": "申込"}}},
+    {"id": "03", "name": "支払確認", "actions": {"next": {"id": "04", "action": "支払確認"}, "back": {"id": "02", "action": "却下"}}},
+    {"id": "04", "name": "支払承認", "actions": {"next": {"id": "05", "action": "支払承認"}, "back": {"id": "02", "action": "却下"}}},
+    {"id": "05", "name": "受取確認", "actions": {"next": {"id": "06", "action": "受取確認"}, "back": {"id": "02", "action": "却下"}}},
+    {"id": "06", "name": "受取承認", "actions": {"next": {"id": "07", "action": "受取承認"}, "back": {"id": "05", "action": "却下"}}},
+    {"id": "07", "name": "決算業務", "actions": {"next": {"id": "08", "action": "決済"}}},
+    {"id": "08", "name": "完了"}
+  ]
+}

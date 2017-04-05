@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!-- Meta, title, CSS, favicons, etc. -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Blockchain票据交易平台 | 管理</title>
+
+    <!-- Bootstrap -->
+    <link href="components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="components/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+
+    <!-- PNotify -->
+    <link href="components/pnotify/dist/pnotify.css" rel="stylesheet">
+    <link href="components/pnotify/dist/pnotify.buttons.css" rel="stylesheet">
+    <link href="components/pnotify/dist/pnotify.mobile.css" rel="stylesheet">
+
+    <!-- Custom Theme Style -->
+    <link href="css/custom.css" rel="stylesheet">
+</head>
+
+<body style="background:#F7F7F7;">
+    <div class="">
+        <div id="wrapper">
+            <form>
+            <div class="form-group">
+                <label class="control-label col-md-3 col-sm-3 col-xs-12">运行环境 <span class="required">*</span></label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <label><input type="radio" class="icheck" value="0"name="radio-mode"> 本地</label>
+                    &nbsp;
+                    <label><input type="radio" class="icheck" value="1" name="radio-mode"> 开发</label>
+                    &nbsp;
+                    <label><input type="radio" class="icheck" value="2" name="radio-mode"> 生产</label>
+                </div>
+            </div>
+            </form>
+
+            <div class="ln_solid"></div>
+            <div class="form-group">
+                <div>
+                    <button class="btn btn-success" id="button-save">提交</button>
+                    <button class="btn btn-primary">取消</button>
+                    <button id="btn-reset" class="btn btn-primary" onclick="resetBills();">重置</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- jQuery -->
+    <script src="components/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <!-- PNotify -->
+    <script src="components/pnotify/dist/pnotify.js"></script>
+    <script src="components/pnotify/dist/pnotify.buttons.js"></script>
+    <script src="components/pnotify/dist/pnotify.nonblock.js"></script>
+
+    <script type="text/javascript">
+        $(function() {
+            getMode();
+            $("#button-save").click(function() {
+                changeMode();
+            });
+
+        });
+        function getMode() {
+            var option = {
+                type:"GET",
+                url:"/api/mode",
+                dataType:"json",
+                data:{},
+                success:function(res){
+                    if (res.mode) {
+                        $("input[name='radio-mode']:eq("+res.mode+")").attr("checked",'checked');
+                    }
+                },
+                error:function(err){
+                    new PNotify({
+                        styling: 'bootstrap3',
+                        title: 'System Error',
+                        text: err,
+                        type: 'error',
+                        icon: true,
+                        animate_speed: 'normal',
+                        delay: 2000
+                    });
+                }
+            };
+            $.ajax(option);
+        }
+
+        function changeMode() {
+            var mode = $("input:radio[name='radio-mode']:checked").val();
+
+            var option = {
+                type:"POST",
+                url:"/api/mode",
+                dataType:"json",
+                data:{mode: mode},
+                success:function(res){
+                    if (res.mode) {
+                        $("input[name='radio-mode']:eq("+res.mode+")").attr("checked",'checked');
+                    }
+                },
+                error:function(err){
+                    new PNotify({
+                        styling: 'bootstrap3',
+                        title: 'System Error',
+                        text: err,
+                        type: 'error',
+                        icon: true,
+                        animate_speed: 'normal',
+                        delay: 2000
+                    });
+                }
+            };
+            $.ajax(option);
+        }
+
+        function resetBills() {
+            var options = {
+                type:"POST",
+                url:"/api/reset",
+                dataType:"json",
+                data: {},
+                success:function(res){
+                    if (res.bills) {
+                        new PNotify({
+                            styling: 'bootstrap3',
+                            title: '执行成功',
+                            text: JSON.stringify(res.bills),//'票据托管失败, 请重试或联系管理员.',
+                            type: 'success',
+                            icon: true,
+                            animate_speed: 'normal',
+                            delay: 2000
+                        });
+                    } else {
+                        new PNotify({
+                            styling: 'bootstrap3',
+                            title: '执行失败',
+                            text: JSON.stringify(res.err),//'票据托管失败, 请重试或联系管理员.',
+                            type: 'error',
+                            icon: true,
+                            animate_speed: 'normal',
+                            delay: 2000
+                        });
+                    }
+                },
+                error:function(err){
+                    new PNotify({
+                        styling: 'bootstrap3',
+                        title: '系统错误',
+                        text: err,
+                        type: 'error',
+                        icon: true,
+                        animate_speed: 'normal',
+                        delay: 2000
+                    });
+                }
+            };
+            $.ajax(options);
+        }
+    </script>
+</body>
+</html>

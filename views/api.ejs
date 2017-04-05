@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API List</title>
+</head>
+<body>
+<h1>API List</h1>
+<%=token%>
+
+    <input type="text" id="token" value=""/>
+    <button id="button">commit</button>
+
+
+<!-- jQuery -->
+<script src="components/jquery/dist/jquery.min.js"></script>
+
+<script>
+    $(function() {
+       $('#button').click(function() {
+           var token = $('#token').val();
+           console.log(token);
+           var option = {
+               type:"POST",
+               url:"/api",
+               //contentType:"application /json;charset:utf-8",
+               dataType:"json",
+               data:{
+                   token: token
+               },
+               success:function(response){
+                   console.log(response);
+               },
+               error:function(err){
+                   alert(err);
+               }
+           };
+           $.ajax(option);
+       });
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+{
+  "users": [{
+    "username": "admin",
+    "passwd": "123456",
+    "desc": "管理者",
+    "step": "ALL",
+    "party": "NA",
+    "photo": "images/img00.jpg"
+  }, {
+    "username": "user01",
+    "passwd": "123456",
+    "desc": "ユーザ０１ (売り方申込者)",
+    "step": "02",
+    "party": "P1",
+    "photo": "images/img01.jpg"
+  }, {
+    "username": "user02",
+    "passwd": "123456",
+    "desc": "ユーザ０２ (保管機関)",
+    "step": "01",
+    "party": "NA",
+    "photo": "images/img02.jpg"
+  }, {
+    "username": "user03",
+    "passwd": "123456",
+    "desc": "ユーザ０３ (売り方確認者)",
+    "step": "03",
+    "party": "P1",
+    "photo": "images/img03.jpg"
+  }, {
+    "username": "user04",
+    "passwd": "123456",
+    "desc": "ユーザ０４ (売り方承認者)",
+    "step": "04",
+    "party": "P1",
+    "photo": "images/img04.jpg"
+  }, {
+    "username": "user05",
+    "passwd": "123456",
+    "desc": "ユーザ０５ (買い方確認者)",
+    "step": "05",
+    "party": "P2",
+    "photo": "images/img05.jpg"
+  }, {
+    "username": "user06",
+    "passwd": "123456",
+    "desc": "ユーザ０６ (買い方承認者)",
+    "step": "06",
+    "party": "P2",
+    "photo": "images/img06.jpg"
+  }, {
+    "username": "user07",
+    "passwd": "123456",
+    "desc": "決算業務",
+    "step": "07",
+    "party": "NA",
+    "photo": "images/img07.jpg"
+  }, {
+    "username": "jiangsihong_salesapplication_user01",
+    "passwd": "123456",
+    "desc": "蒋嗣宏 (売り方申込者)",
+    "step": "02",
+    "party": "P1"
+  }, {
+    "username": "wangjun_custodian_user02",
+    "passwd": "123456",
+    "desc": "王军 (保管機関)",
+    "step": "01",
+    "party": "NA"
+  }, {
+    "username": "zhaohongwei_salesreview_user03",
+    "passwd": "123456",
+    "desc": "赵红卫 (売り方確認者)",
+    "step": "03",
+    "party": "P1"
+  }, {
+    "username": "zhangguangqin_salesapprover_user04",
+    "passwd": "123456",
+    "desc": "张广钦 (売り方承認者)",
+    "step": "04",
+    "party": "P1"
+  }, {
+    "username": "caibo_buyerapprover_user05",
+    "passwd": "123456",
+    "desc": "蔡帛 (買い方確認者)",
+    "step": "05",
+    "party": "P2"
+  }, {
+    "username": "zhangzheng_buyerexamine_user06",
+    "passwd": "123456",
+    "desc": "张政 (買い方承認者)",
+    "step": "06",
+    "party": "P2"
+  }, {
+    "username": "settlement_user07",
+    "passwd": "123456",
+    "desc": "決算業務",
+    "step": "07",
+    "party": "NA"
+  }]
+}
+

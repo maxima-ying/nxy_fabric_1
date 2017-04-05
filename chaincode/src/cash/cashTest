@@ -1,0 +1,16 @@
+//for test
+//#register:
+go build && CORE_CHAINCODE_ID_NAME=mycc CORE_PEER_ADDRESS=0.0.0.0:7051 ./cash
+//
+//#deploy
+//./peer chaincode deploy -n billTransfer -c '{"Function":"Init","Args": ["SalerParty", "100000000"]}'
+//./peer chaincode deploy -n billTransfer -c '{"Function":"Init","Args": ["BuyinParty", "100000000"]}'
+//
+//#query
+//./peer chaincode query -n billTransfer -c '{"Function":"Query","Args": ["SalerParty"]}'
+//./peer chaincode query -n billTransfer -c '{"Function":"Query","Args": ["BuyinParty"]}'
+//
+//#invoke
+//./peer chaincode invoke -n billTransfer -c '{"Function":"Invoke","Args": ["SalerParty","BuyinParty","1000"]}'
+//
+//#deploy 只能运行一次在 register之后，在Invoke 之前。

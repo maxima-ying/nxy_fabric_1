@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!-- Meta, title, CSS, favicons, etc. -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>手形売買業務　|　登録</title>
+
+    <!-- Bootstrap -->
+    <link href="components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="components/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+
+    <!-- PNotify -->
+    <link href="components/pnotify/dist/pnotify.css" rel="stylesheet">
+    <link href="components/pnotify/dist/pnotify.buttons.css" rel="stylesheet">
+    <link href="components/pnotify/dist/pnotify.mobile.css" rel="stylesheet">
+
+    <!-- Custom Theme Style -->
+    <link href="css/custom.css" rel="stylesheet">
+</head>
+
+<body style="background:#F7F7F7;">
+    <div class="">
+        <a class="hiddenanchor" id="toregister"></a>
+        <a class="hiddenanchor" id="tologin"></a>
+
+        <div id="wrapper">
+            <div id="login" class=" form">
+                <section class="login_content">
+                    <form>
+                        <h1>Login</h1>
+                        <div>
+                            <input type="text" id="text-username" class="form-control" placeholder="ユーザーID" required="" />
+                        </div>
+                        <div>
+                            <input type="password" id="text-passwd" class="form-control" placeholder="パスワード" required="" />
+                        </div>
+                        <div>
+                            <a id="button-login" class="btn btn-default submit" href="javascript:;">Log in</a>
+                            <a class="reset_pass" href="#">Lost your password?</a>
+                        </div>
+                        <div class="clearfix"></div>
+                    </form>
+                </section>
+            </div>
+        </div>
+    </div>
+    <!-- jQuery -->
+    <script src="components/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <!-- PNotify -->
+    <script src="components/pnotify/dist/pnotify.js"></script>
+    <script src="components/pnotify/dist/pnotify.buttons.js"></script>
+    <script src="components/pnotify/dist/pnotify.nonblock.js"></script>
+
+    <script type="text/javascript">
+        $(function() {
+            $("#button-login").click(function() {
+                doLogin();
+            });
+            $("input[type='text']").keydown(function(event) {
+                if (event.keyCode == 13) {
+                    $("input[type='password']").focus();
+                }
+            });
+            $("input[type='password']").keydown(function(event) {
+                if (event.keyCode == 13) {
+                    $('#button-login').trigger('click');
+                }
+            });
+        });
+        function doLogin() {
+            var userName = $('#text-username').val();
+            var passwd = $('#text-passwd').val();
+
+            var option = {
+                type:"POST",
+                url:"/api/login",
+                dataType:"json",
+                data:{
+                    username: userName,
+                    passwd: passwd
+                },
+                success:function(res){
+                    if (res.result) {
+                        window.location.href= '/index?token=' + res.token;
+                    } else {
+                        new PNotify({
+                            styling: 'bootstrap3',
+                            title: 'Login Error',
+                            text: 'Please try again.',
+                            type: 'error',
+                            icon: true,
+                            animate_speed: 'normal',
+                            delay: 2000
+                        });
+                    }
+                },
+                error:function(err){
+                    new PNotify({
+                        styling: 'bootstrap3',
+                        title: 'System Error',
+                        text: err,
+                        type: 'error',
+                        icon: true,
+                        animate_speed: 'normal',
+                        delay: 2000
+                    });
+                }
+            };
+            $.ajax(option);
+        }
+    </script>
+</body>
+</html>

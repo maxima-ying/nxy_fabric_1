@@ -1,0 +1,27 @@
+{
+  "name": "IBM_CIC_BC-BXY_Demo",
+  "version": "1.0.0",
+  "description": "农信银Demo",
+  "private": true,
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "cfenv": "1.0.3",
+    "ejs": "^2.5.5",
+    "express": "4.14.0",
+    "jsonwebtoken": "^7.2.1",
+    "request": "^2.79.0",
+    "winston": "^2.3.0",
+    "hfc":"^0.6.5",
+    "async":"^2.1.4"
+  },
+  "repository": {
+    "type":"git",
+    "url":"https://hub.jazz.net/git/heye/cic-banking-service-bc-nxy"
+  },
+  "engines": {
+    "node": "4.x"
+  }
+}

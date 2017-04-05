@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!-- Meta, title, CSS, favicons, etc. -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title><%=lang.blockchain_bill_transaction_platform%></title>
+
+    <!-- Bootstrap -->
+    <link href="components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link href="components/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+
+    <!--datepicker-->
+    <link href="components/bootstrap-datepicker/dist/css/bootstrap-datepicker3.min.css" rel="stylesheet">
+
+    <!--iCheck-->
+    <link href="components/iCheck/skins/all.css" rel="stylesheet">
+
+    <!-- PNotify -->
+    <link href="components/pnotify/dist/pnotify.css" rel="stylesheet">
+    <link href="components/pnotify/dist/pnotify.buttons.css" rel="stylesheet">
+    <link href="components/pnotify/dist/pnotify.mobile.css" rel="stylesheet">
+
+    <!-- Parsley.js -->
+    <link href="components/parsleyjs/src/parsley.css" rel="stylesheet">
+
+    <!-- Custom Theme Style -->
+    <link href="css/custom.css" rel="stylesheet">
+</head>
+<body class="nav-md" <% if (token) { %>data-token="<%=token%>"<% } %> <% if (user) { %>data-party="<%=user.party%>"<% } %>>
+<% if (token && user) { %>
+<!-- header content -->
+<header>
+    <div class="navbar" style="border: 0;">
+        <a href="javascript:void(0);" class="site_title"><!--img src="images/logo.png" height="40"/-->
+            &nbsp;<span><%=lang.blockchain_dash%>(<small id="label-proj_name"><%=lang.bill_transaction_platform%></small>)</span>
+        </a>
+    </div>
+</header>
+<!-- /header content -->
+<div class="container body">
+    <div class="main_container">
+        <div class="col-md-3 left_col">
+            <div class="left_col scroll-view">
+                <!-- sidebar menu -->
+                <div id="sidebar-menu" class="main_menu_side hidden-print main_menu">
+                    <div class="menu_section">
+                        <br/>
+                        <ul class="nav side-menu">
+                            <li><a id="link-tasks" style="font-size: 14px;"><i class="fa fa-tasks"></i><%=lang.task_center%></a>
+                            </li>
+                            <% if (user.party != 'NA') { %>
+                            <li><a id="link-assets" style="font-size: 14px;"><i class="fa fa-money"></i><%=lang.Asset_center%></a>
+                            </li>
+                            <% } %>
+                            <% if (user.step == '02' || user.step == 'ALL') { %>
+                            <li><a id="link-bill_input" style="font-size: 14px;"><i class="fa fa-plus-square-o"></i><%=lang.bill_storage%></a>
+                            </li>
+                            <% } %>
+                        </ul>
+                    </div>
+                </div>
+                <!-- /sidebar menu -->
+            </div>
+        </div>
+
+        <!-- top navigation -->
+        <div class="top_nav">
+
+            <div class="nav_menu">
+                <nav class="" role="navigation">
+                    <div class="nav toggle">
+                        <a id="menu_toggle"><i class="fa fa-bars"></i></a>
+                    </div>
+
+                    <ul class="nav navbar-nav navbar-right">
+                        <li class="">
+                            <a href="javascript:;" class="user-profile dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                            <!--    <img src="images/img.jpg" alt=""><% if (user) { %><%=user.desc%><% } %>  -->
+                                <img src=<% if (user) { %><%=user.photo%><% } %> alt=""><% if (user) { %><%=user.desc%><% } %>
+                                <span class=" fa fa-angle-down"></span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-usermenu pull-right">
+                                <li><a href="javascript:;" style="cursor:no-drop;"><i class="fa fa-user pull-right"></i><%=lang.personal_setting%></a>
+                                </li>
+                                <li><a href="login.html"><i class="fa fa-sign-out pull-right"></i><%=lang.logout%></a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        <!-- /top navigation -->
+
+        <!-- page content -->
+        <div id="div_page_content" class="right_col" style="overflow-y: scroll" role="main">
+
+        </div>
+        <!-- /page content -->
+
+        <!-- footer content -->
+        <footer>
+            <div class="pull-right">
+                GBS CTO BlueMix Team
+            </div>
+            <div class="clearfix"></div>
+        </footer>
+        <!-- /footer content -->
+
+        <!-- back-top button -->
+        <i class="fa fa-angle-up cd-top white" id="backTop" title="Back to Top"></i>
+        <!-- /back-top button -->
+    </div>
+</div>
+
+<div id="div-waiting" class="waiting" style="display: none;">
+    <div class="spinner">
+        <div class="rect1"></div>
+        <div class="rect2"></div>
+        <div class="rect3"></div>
+        <div class="rect4"></div>
+        <div class="rect5"></div>
+    </div>
+</div>
+
+<!-- jQuery -->
+<script src="components/jquery/dist/jquery.min.js"></script>
+<!-- Bootstrap -->
+<script src="components/bootstrap/dist/js/bootstrap.min.js"></script>
+<!-- FastClick -->
+<script src="components/fastclick/lib/fastclick.js"></script>
+<!-- BlueImp-Tmpl -->
+<script src="components/blueimp-tmpl/js/tmpl.min.js"></script>
+<!-- Datatables-->
+<script src="components/datatables.net/js/jquery.dataTables.min.js"></script>
+<script src="components/datatables.net-bs/js/dataTables.bootstrap.min.js"></script>
+<!-- bootbox -->
+<script src="components/bootbox.js/bootbox.js"></script>
+<!--datepicker-->
+<script src="components/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js"></script>
+<!--<script src="components/bootstrap-datepicker/dist/locales/bootstrap-datepicker.zh-CN.min.js" charset="UTF-8"></script>-->
+<script src="components/bootstrap-datepicker/dist/locales/bootstrap-datepicker.ja.min.js" charset="UTF-8"></script>
+<!--iCheck-->
+<script src="components/iCheck/icheck.min.js"></script>
+<!-- PNotify -->
+<script src="components/pnotify/dist/pnotify.js"></script>
+<script src="components/pnotify/dist/pnotify.buttons.js"></script>
+<script src="components/pnotify/dist/pnotify.nonblock.js"></script>
+<!-- Parsley.js -->
+<script src="components/parsleyjs/dist/parsley.min.js"></script>
+<script src="components/parsleyjs/dist/i18n/ja.js" charset="UTF-8"></script>
+<!-- Custom Theme Scripts -->
+<script src="js/custom.js"></script>
+
+<!-- Custom Event Scripts -->
+<script src="js/menu.js"></script>
+<script src="js/main.js"></script>
+
+<script>
+    function loadTasks() {
+        var token = $('body').attr('data-token');
+
+        var option = {
+            type:"GET",
+            url:"/api/task/list",
+            dataType:"json",
+            data:{
+            },
+            beforeSend: function(xhr){
+                xhr.setRequestHeader('token', token);
+            },
+            success:function(res){
+                if (res.result) {
+                    console.log(res);
+                } else {
+                    console.log(res);
+                }
+            },
+            error:function(err){
+                alert(err);
+            }
+        };
+        $.ajax(option);
+    }
+</script>
+
+<!--Template: 任务详细-->
+<script type="text/x-tmpl" id="tmpl-bill_detail">
+<div class="row">
+    <div class="col-md-12">
+        <form class="form-horizontal" data-parsley-validate>
+        {% if (o.current_step.actions.next.id == '03') { %}
+            <div class="form-group">
+              <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-saler_party"><%=lang.seller_organization%> <span class="required">*</span></label>
+              <div class="col-md-6 col-sm-6 col-xs-12">
+                <input type="text" id="text-saler_party" class="form-control col-md-7 col-xs-12" value="P1"
+                    readonly/>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-buyin_party"><%=lang.buyer_organization%> <span class="required">*</span></label>
+              <div class="col-md-6 col-sm-6 col-xs-12">
+                <input type="text" id="text-buyin_party" class="form-control col-md-7 col-xs-12"  value="P2"
+                    readonly/>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-deal_amount"><%=lang.transaction_amount%> <span class="required">*</span></label>
+              <div class="col-md-6 col-sm-6 col-xs-12">
+              <!-- 默认 票据利息是 ５％,  交易金额 = 票面金额 * (1 - 票据利息),  也就是 票面金额10000元的话，实际入手的交易金额为9500元 -->
+                <input type="text" id="text-deal_amount" class="form-control col-md-7 col-xs-12" value="{%= o.face_amount * 0.95 %}"
+                    data-parsley-trigger="input change" data-parsley-range="[1, 3000000]" required/>
+              </div>
+            </div>
+        {% } %}
+        <div class="form-group">
+          <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-appr_comment"><%=lang.comments%></label>
+          <div class="col-md-6 col-sm-6 col-xs-12">
+            <textarea id="text-appr_comment" class="form-control col-md-7 col-xs-12"
+                data-parsley-trigger="input change"
+                data-parsley-maxlength="100"
+                data-parsley-maxlength-message = <%=lang.msg_input_len_chk%>
+                data-parsley-validation-threshold="10"/>
+          </div>
+        </div>
+        <div class="ln_solid"></div>
+        <div style="text-align:right;">
+            <a id="toggle-task_detail" href="javascript:toggleTaskDetail();"><%=lang.detail%>  <i class="fa fa-angle-double-down"></i></a>
+        </div>
+        <div id="div-task_detail" style="display: none;">
+        <div  style="display: none;"  ><input type="text" id="div_label_detail" value="<%=lang.detail%>"> <%=lang.detail%> </input> </div>
+        <div class="form-group">
+          <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-bill_no"><%=lang.bill_number%> <span class="required">*</span></label>
+          <div class="col-md-6 col-sm-6 col-xs-12">
+            <input type="text" id="text-bill_no" class="form-control col-md-7 col-xs-12" value="{%= o.bill_no%}"
+                readonly/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-bill_attr"><%=lang.bill_attribute%> <span class="required">*</span></label>
+          <div class="col-md-6 col-sm-6 col-xs-12">
+            <label><input type="radio" class="icheck" value="0" id="radio-bill_attr0" name="radio-bill_attr" {% if (o.bill_attr == 0) { %}checked{% } %}
+                    readonly> <%=lang.bill_attribute_paper%></label>
+            &nbsp;
+            <label><input type="radio" class="icheck" value="1" id="radio-bill_attr1" name="radio-bill_attr" {% if (o.bill_attr == 1) { %}checked{% } %}
+                    readonly> <%=lang.bill_attribute_electronic%></label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-billtype"><%=lang.bill_type%> <span class="required">*</span></label>
+          <div class="col-md-6 col-sm-6 col-xs-12">
+            <label><input type="radio" class="icheck" value="0" id="radio-bill_type0" name="radio-bill_type" {% if (o.bill_type == 0) { %}checked{% } %}
+                    readonly> <%=lang.bank_bill%></label>
+            &nbsp;
+            <label><input type="radio" class="icheck" value="1" id="radio-bill_type1" name="radio-bill_type" {% if (o.bill_type == 1) { %}checked{% } %}
+                    readonly> <%=lang.business_bill%></label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-issuer_name"><%=lang.payer_name%> <span class="required">*</span></label>
+          <div class="col-md-6 col-sm-6 col-xs-12">
+            <input type="text" id="text-issuer_name" class="form-control col-md-7 col-xs-12" value="{%= o.issuer_name %}"
+                readonly/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-issuer_account"><%=lang.payer_account%> <span class="required">*</span></label>
+          <div class="col-md-6 col-sm-6 col-xs-12">
+            <input type="text" id="text-issuer_account" class="form-control col-md-7 col-xs-12" value="{%= o.issuer_account %}"
+                readonly/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-issuer_bank"><%=lang.payer_bank_no%> <span class="required">*</span></label>
+          <div class="col-md-6 col-sm-6 col-xs-12">
+            <input type="text" id="text-issuer_bank" class="form-control col-md-7 col-xs-12" value="{%= o.issuer_bank %}"
+                readonly/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-custodian_name"><%=lang.accepter_name%> <span class="required">*</span></label>
+          <div class="col-md-6 col-sm-6 col-xs-12">
+            <input type="text" id="text-custodian_name" class="form-control col-md-7 col-xs-12" value="{%= o.custodian_name %}"
+                readonly/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-custodian_account"><%=lang.accepter_account%> <span class="required">*</span></label>
+          <div class="col-md-6 col-sm-6 col-xs-12">
+            <input type="text" id="text-custodian_account" class="form-control col-md-7 col-xs-12" value="{%= o.custodian_account %}"
+                readonly/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-custodian_bank"><%=lang.accepter_bank_no%> <span class="required">*</span></label>
+          <div class="col-md-6 col-sm-6 col-xs-12">
+            <input type="text" id="text-custodian_bank" class="form-control col-md-7 col-xs-12" value="{%= o.custodian_bank %}"
+                readonly/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-face_amount"><%=lang.bill_amount%> <span class="required">*</span></label>
+          <div class="col-md-6 col-sm-6 col-xs-12">
+            <input type="text" id="text-face_amount" class="form-control col-md-7 col-xs-12" value="{%= o.face_amount %}"
+                readonly/>
+          </div>
+        </div>
+
+        <!-- step04 到 07，明细里面　显示 取引金额 -->
+        {% if (o.current_step.actions.next.id > '03') { %}
+        <div class="form-group">
+          <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-face_amount"><%=lang.transaction_amount%> <span class="required">*</span></label>
+          <div class="col-md-6 col-sm-6 col-xs-12">
+            <input type="text" id="text-deal_amount" class="form-control col-md-7 col-xs-12" value="{%= o.amount %}"
+                readonly/>
+          </div>
+        </div>
+        {% } %}
+
+        <div class="form-group">
+          <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-acceptor_name"><%=lang.cash_person_name%> <span class="required">*</span></label>
+          <div class="col-md-6 col-sm-6 col-xs-12">
+            <input type="text" id="text-acceptor_name" class="form-control col-md-7 col-xs-12" value="{%= o.acceptor_name %}"
+                readonly/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-acceptor_account"><%=lang.cash_person_account%> <span class="required">*</span></label>
+          <div class="col-md-6 col-sm-6 col-xs-12">
+            <input type="text" id="text-acceptor_account" class="form-control col-md-7 col-xs-12" value="{%= o.acceptor_account %}"
+                readonly/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-acceptor_bank"><%=lang.cash_person_bank_no%> <span class="required">*</span></label>
+          <div class="col-md-6 col-sm-6 col-xs-12">
+            <input type="text" id="text-acceptor_bank" class="form-control col-md-7 col-xs-12" value="{%= o.acceptor_bank %}"
+                readonly/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-issue_date"><%=lang.bill_draw_date%> <span class="required">*</span></label>
+          <div class="col-md-6 col-sm-6 col-xs-12">
+            <div class="input-group date">
+              <input type="text" id="text-issue_date" class="form-control" value="{%= o.issue_date %}"
+                readonly><span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-due_date"><%=lang.bill_expire_date%> <span class="required">*</span></label>
+          <div class="col-md-6 col-sm-6 col-xs-12">
+            <div class="input-group date">
+              <input type="text" id="text-due_date" class="form-control" value="{%= o.due_date %}"
+                readonly><span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-accept_date"><%=lang.cash_date%> <span class="required">*</span></label>
+          <div class="col-md-6 col-sm-6 col-xs-12">
+            <div class="input-group date">
+              <input type="text" id="text-accept_date" class="form-control" value="{%= o.accept_date %}"
+                readonly><span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-pay_bank"><%=lang.payment_bank_no%> <span class="required">*</span></label>
+          <div class="col-md-6 col-sm-6 col-xs-12">
+            <input type="text" id="text-pay_bank" class="form-control col-md-7 col-xs-12" value="{%= o.pay_bank %}"
+                readonly/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="control-label col-md-3 col-sm-3 col-xs-12" for="radio-trans_enable"><%=lang.assignment_sign%> <span class="required">*</span></label>
+          <div class="col-md-6 col-sm-6 col-xs-12">
+            <label>
+                <input type="radio" class="icheck" value="0" name="radio-trans_enable" {% if (o.trans_enable == 0) { %}checked{% } %}
+                    readonly> <%=lang.assignment_sign_ok%></label>
+            &nbsp;
+            <label><input type="radio" class="icheck" value="1" name="radio-trans_enable" {% if (o.trans_enable == 1) { %}checked{% } %}
+                    readonly> <%=lang.assignment_sign_no%></label>
+          </div>
+        </div>
+        </form>
+    </div>
+</div>
+</script>
+
+<!--Template: 任务中心-->
+<script type="text/x-tmpl" id="tmpl-tasks">
+<div class="">
+    <div class="page-title">
+        <div class="title_left">
+            <h3><%=lang.task_center%></h3>
+        </div>
+    </div>
+    <div class="clearfix"></div>
+
+    <div class="row" style="height:520px;">
+        <div class="col-md-6 col-sm-6 col-xs-12" style="width: 100%">
+            <div class="x_panel">
+                <div class="x_title">
+                    <h2><%=lang.task_list%></h2>
+                    <div class="clearfix"></div>
+                </div>
+                <div class="x_content">
+                    <div class="" role="tabpanel" data-example-id="togglable-tabs">
+                        <ul id="myTab" class="nav nav-tabs bar_tabs" role="tablist">
+                          <li role="presentation" class="active">
+                            <a href="#tab_content1" id="home-tab" role="tab" data-toggle="tab" aria-expanded="true"><%=lang.todo_list%></a>
+                          </li>
+                          <li role="presentation" class=""><a href="#tab_content2" role="tab" id="profile-tab" aria-expanded="false" style="cursor:no-drop;color:darkgray;"><%=lang.task_list_history%></a>
+                          </li>
+                        </ul>
+                    <div id="myTabContent" class="tab-content">
+                      <div role="tabpanel" class="tab-pane fade active in" id="tab_content1" aria-labelledby="home-tab">
+                        <table id="table-tasks" class="table table-striped jambo_table" border="1">
+                            <thead>
+                            <tr>
+                                <th class="column-title middle" width="10%"><%=lang.bill_number%></th>
+                                <th class="column-title" width="10%"><%=lang.bill_attribute%></th>
+                                <th class="column-title" width="10%"><%=lang.bill_type%></th>
+                                <th class="column-title middle" width="10%"><%=lang.bill_amount_add_currency%></th>
+                                <th class="column-title middle" width="10%"><%=lang.payer%></th>
+                                <th class="column-title middle" width="10%"><%=lang.accepter%></th>
+                                <th class="column-title middle" width="10%"><%=lang.cash_person%></th>
+                                <th class="column-title middle" width="10%"><%=lang.bill_expire_date%></th>
+                                <th class="column-title middle" width="10%"><%=lang.cash_date%></th>
+                                <th class="column-title middle" width="10%"><%=lang.operation%></th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for (var i = 0; i < o.tasks.length; i++) { %}
+                                <tr data-bill_no="{%=o.tasks[i].bill_no%}"
+                                    data-current_step="{%=o.tasks[i].current_step.id%}">
+                                    <td class="center middle" name="bill_no">{%=o.tasks[i].bill_no%}</td>
+                                    <td class="center middle">{% if (o.tasks[i].bill_attr == 0) { %}<%=lang.bill_attribute_paper%>{% } else { %}<%=lang.bill_attribute_electronic%>{% } %}</td>
+                                    <td class="center middle">{% if (o.tasks[i].bill_type == 0) { %}<%=lang.bank_bill%>{% } else { %}<%=lang.business_bill%>{% } %}</td>
+                                    <td class="right middle">{%=o.tasks[i].face_amount%}</td>
+                                    <td class="middle">{%=o.tasks[i].issuer_name%}</td>
+                                    <td class="middle">{%=o.tasks[i].custodian_name%}</td>
+                                    <td class="middle">{%=o.tasks[i].acceptor_name%}</td>
+                                    <td class="center middle">{%=o.tasks[i].due_date%}</td>
+                                    <td class="center middle">{%=o.tasks[i].accept_date%}</td>
+                                    <td class="center noselect">
+                                        {% if (o.tasks[i].current_step.actions) { %}
+                                        <button type="submit" class="btn btn-success" data-next="{%=o.tasks[i].current_step.actions.next.id%}">{%=o.tasks[i].current_step.actions.next.action%}</button>
+                                        {% if (o.tasks[i].current_step.actions.back) { %}
+                                        <button type="submit" class="btn btn-primary">{%=o.tasks[i].current_step.actions.back.action%}</button>
+                                        {% }} else { %} <%=lang.done%> {% } %}
+                                    </td>
+                                </tr>
+                            {% } %}
+                            </tbody>
+                        </table>
+                      </div>
+                      <div role="tabpanel" class="tab-pane fade" id="tab_content2" aria-labelledby="profile-tab">
+                        <p>TO BE DONE.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</script>
+
+<!--Template: 资产中心-->
+<script type="text/x-tmpl" id="tmpl-asset">
+<div class="" id="tmpl_switch_proj">
+    <div class="page-title">
+        <div class="title_left">
+            <h3><%=lang.Asset_center%></h3>
+        </div>
+    </div>
+    <div class="clearfix"></div>
+
+    <div class="row" style="height:520px;">
+        <div class="col-md-6 col-sm-6 col-xs-12" style="width: 100%">
+            <div class="x_panel">
+                <div class="x_title">
+                    <h2><%=lang.bill_assets%></h2>
+                    <div class="clearfix"></div>
+                </div>
+                <div class="x_content">
+                    <span>{%=o.account.bill%} <%=lang.currency%></span>
+                </div>
+            </div>
+            <div class="x_panel">
+                <div class="x_title">
+                    <h2><%=lang.cash_assets%></h2>
+                    <div class="clearfix"></div>
+                </div>
+                <div class="x_content">
+                    <span>{%=o.account.cash%} <%=lang.currency%></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</script>
+
+<!--Template: 票据托管-->
+<script type="text/x-tmpl" id="tmpl-bill_init">
+<div class="" id="tmpl_switch_proj">
+    <div class="page-title">
+        <div class="title_left">
+            <h3><%=lang.bill_storage%></h3>
+        </div>
+    </div>
+    <div class="clearfix"></div>
+
+    <div class="row" style="height:520px;">
+        <div class="col-md-6 col-sm-6 col-xs-12" style="width: 100%">
+            <div class="x_panel">
+                <div class="x_title">
+                    <h2><%=lang.bill_info%></h2>
+                    <div class="clearfix"></div>
+                </div>
+                <div class="x_content">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <form id="init_form" class="form-horizontal" data-parsley-validate>
+                            <div class="form-group">
+                              <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-bill_attr"><%=lang.bill_attribute%> <span class="required">*</span></label>
+                              <div class="col-md-6 col-sm-6 col-xs-12">
+                                <label><input type="radio" class="icheck" value="0" id="radio-bill_attr0" name="radio-bill_attr" {% if (o.bill_attr == 0) { %}checked{% } %}
+                                    data-parsley-trigger="change" required> <%=lang.bill_attribute_paper%></label>
+                                &nbsp;
+                                <label><input type="radio" class="icheck" value="1" id="radio-bill_attr1" name="radio-bill_attr" {% if (o.bill_attr == 1) { %}checked{% } %}> <%=lang.bill_attribute_electronic%></label>
+                              </div>
+                            </div>
+
+                            <div class="form-group">
+                              <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-billtype"><%=lang.bill_type%> <span class="required">*</span></label>
+                              <div class="col-md-6 col-sm-6 col-xs-12">
+                                <label><input type="radio" class="icheck" value="0" id="radio-bill_type0" name="radio-bill_type" {% if (o.bill_type == 0) { %}checked{% } %}
+                                    data-parsley-trigger="change" required> <%=lang.bank_bill%></label>
+                                &nbsp;
+                                <label><input type="radio" class="icheck" value="1" id="radio-bill_type1" name="radio-bill_type" {% if (o.bill_type == 1) { %}checked{% } %}> <%=lang.business_bill%></label>
+                              </div>
+                            </div>
+
+                            <div class="form-group">
+                              <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-issuer_name"><%=lang.payer_name%> <span class="required">*</span></label>
+                              <div class="col-md-6 col-sm-6 col-xs-12">
+                                <input type="text" id="text-issuer_name" class="form-control col-md-7 col-xs-12" value="{%= o.issuer_name %}"
+                                    data-parsley-trigger="input change" required/>
+                              </div>
+                            </div>
+
+                            <div class="form-group">
+                              <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-issuer_account"><%=lang.payer_account%> <span class="required">*</span></label>
+                              <div class="col-md-6 col-sm-6 col-xs-12">
+                                <input type="text" id="text-issuer_account" class="form-control col-md-7 col-xs-12" value="{%= o.issuer_account %}"
+                                    data-parsley-trigger="input change"  required/>
+                              </div>
+                            </div>
+
+                            <div class="form-group">
+                              <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-issuer_bank"><%=lang.payer_bank_no%> <span class="required">*</span></label>
+                              <div class="col-md-6 col-sm-6 col-xs-12">
+                                <input type="text" id="text-issuer_bank" class="form-control col-md-7 col-xs-12" value="{%= o.issuer_bank %}"
+                                    data-parsley-trigger="input change"  required/>
+                              </div>
+                            </div>
+
+                            <div class="form-group">
+                              <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-custodian_name"><%=lang.accepter_name%> <span class="required">*</span></label>
+                              <div class="col-md-6 col-sm-6 col-xs-12">
+                                <input type="text" id="text-custodian_name" class="form-control col-md-7 col-xs-12" value="{%= o.custodian_name %}"
+                                    data-parsley-trigger="input change"  required/>
+                              </div>
+                            </div>
+
+                            <div class="form-group">
+                              <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-custodian_account"><%=lang.accepter_account%> <span class="required">*</span></label>
+                              <div class="col-md-6 col-sm-6 col-xs-12">
+                                <input type="text" id="text-custodian_account" class="form-control col-md-7 col-xs-12" value="{%= o.custodian_account %}"
+                                    data-parsley-trigger="input change"  required/>
+                              </div>
+                            </div>
+
+                            <div class="form-group">
+                              <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-custodian_bank"><%=lang.accepter_bank_no%> <span class="required">*</span></label>
+                              <div class="col-md-6 col-sm-6 col-xs-12">
+                                <input type="text" id="text-custodian_bank" class="form-control col-md-7 col-xs-12" value="{%= o.custodian_bank %}"
+                                    data-parsley-trigger="input change"  required/>
+                              </div>
+                            </div>
+
+                            <div class="form-group">
+                              <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-face_amount"><%=lang.bill_amount%> <span class="required">*</span></label>
+                              <div class="col-md-6 col-sm-6 col-xs-12">
+                                <input type="text" id="text-face_amount" class="form-control col-md-7 col-xs-12" value="{%= o.face_amount %}" 
+                                    data-parsley-trigger="input change" data-parsley-range="[1, 5000000]" required/>
+                              </div>
+                            </div>
+
+                            <div class="form-group">
+                              <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-acceptor_name"><%=lang.cash_person_name%> <span class="required">*</span></label>
+                              <div class="col-md-6 col-sm-6 col-xs-12">
+                                <input type="text" id="text-acceptor_name" class="form-control col-md-7 col-xs-12" value="{%= o.acceptor_name %}"
+                                    data-parsley-trigger="input change"  required/>
+                              </div>
+                            </div>
+
+                            <div class="form-group">
+                              <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-acceptor_account"><%=lang.cash_person_account%> <span class="required">*</span></label>
+                              <div class="col-md-6 col-sm-6 col-xs-12">
+                                <input type="text" id="text-acceptor_account" class="form-control col-md-7 col-xs-12" value="{%= o.acceptor_account %}"
+                                    data-parsley-trigger="input change"  required/>
+                              </div>
+                            </div>
+
+                            <div class="form-group">
+                              <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-acceptor_bank"><%=lang.cash_person_bank_no%> <span class="required">*</span></label>
+                              <div class="col-md-6 col-sm-6 col-xs-12">
+                                <input type="text" id="text-acceptor_bank" class="form-control col-md-7 col-xs-12" value="{%= o.acceptor_bank %}"
+                                    data-parsley-trigger="input change"  required/>
+                              </div>
+                            </div>
+
+                            <div class="form-group">
+                              <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-issue_date"><%=lang.bill_draw_date%> <span class="required">*</span></label>
+                              <div class="col-md-6 col-sm-6 col-xs-12">
+                                <div class="input-group date">
+                                  <input type="text" id="text-issue_date" class="form-control" value="{%= o.issue_date %}"
+                                    data-parsley-trigger="input change"  required><span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div class="form-group">
+                              <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-due_date"><%=lang.bill_expire_date%> <span class="required">*</span></label>
+                              <div class="col-md-6 col-sm-6 col-xs-12">
+                                <div class="input-group date">
+                                  <input type="text" id="text-due_date" class="form-control" value="{%= o.due_date %}"
+                                    data-parsley-trigger="input change"  required><span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div class="form-group">
+                              <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-accept_date"><%=lang.cash_date%> <span class="required">*</span></label>
+                              <div class="col-md-6 col-sm-6 col-xs-12">
+                                <div class="input-group date">
+                                  <input type="text" id="text-accept_date" class="form-control" value="{%= o.accept_date %}"
+                                    data-parsley-trigger="input change"  required><span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div class="form-group">
+                              <label class="control-label col-md-3 col-sm-3 col-xs-12" for="text-pay_bank"><%=lang.payment_bank_no%> <span class="required">*</span></label>
+                              <div class="col-md-6 col-sm-6 col-xs-12">
+                                <input type="text" id="text-pay_bank" class="form-control col-md-7 col-xs-12" value="{%= o.pay_bank %}"
+                                    data-parsley-trigger="input change"  required/>
+                              </div>
+                            </div>
+
+                            <div class="form-group">
+                              <label class="control-label col-md-3 col-sm-3 col-xs-12" for="radio-trans_enable"><%=lang.assignment_sign%> <span class="required">*</span></label>
+                              <div class="col-md-6 col-sm-6 col-xs-12">
+                                <label>
+                                    <input type="radio" class="icheck" value="0" name="radio-trans_enable" {% if (o.trans_enable == 0) { %}checked{% } %}
+                                        data-parsley-trigger="change" required> <%=lang.assignment_sign_ok%></label>
+                                &nbsp;
+                                <label><input type="radio" class="icheck" value="1" name="radio-trans_enable" {% if (o.trans_enable == 1) { %}checked{% } %}> <%=lang.assignment_sign_no%></label>
+                              </div>
+                            </div>
+                            </form>
+                            <div class="ln_solid"></div>
+                            <div class="form-group">
+                              <div class="col-md-6 col-sm-6 col-xs-12 col-md-offset-3">
+                                <button class="btn btn-success"><%=lang.submit%></button>
+                                <button class="btn btn-primary"><%=lang.cancel%></button>
+                              </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</script>
+<% } else { %>
+<script>
+    window.location.href= '/login.html';
+</script>
+<% } %>
+</body>
+</html>

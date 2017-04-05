@@ -1,0 +1,94 @@
+{
+  "users": [{
+    "username": "admin",
+    "passwd": "123456",
+    "desc": "管理员",
+    "step": "ALL",
+    "party": "NA"
+  }, {
+    "username": "user01",
+    "passwd": "123456",
+    "desc": "蒋嗣宏 (卖方申请人)",
+    "step": "02",
+    "party": "P1"
+  }, {
+    "username": "user02",
+    "passwd": "123456",
+    "desc": "王军 (托管行)",
+    "step": "01",
+    "party": "NA"
+  }, {
+    "username": "user03",
+    "passwd": "123456",
+    "desc": "赵红卫 (卖方复核人)",
+    "step": "03",
+    "party": "P1"
+  }, {
+    "username": "user04",
+    "passwd": "123456",
+    "desc": "张广钦 (卖方审批人)",
+    "step": "04",
+    "party": "P1"
+  }, {
+    "username": "user05",
+    "passwd": "123456",
+    "desc": "蔡帛 (买方审核人)",
+    "step": "05",
+    "party": "P2"
+  }, {
+    "username": "user06",
+    "passwd": "123456",
+    "desc": "张政 (买方审批人)",
+    "step": "06",
+    "party": "P2"
+  }, {
+    "username": "user07",
+    "passwd": "123456",
+    "desc": "清算平台",
+    "step": "07",
+    "party": "NA"
+  }, {
+    "username": "jiangsihong_salesapplication_user01",
+    "passwd": "123456",
+    "desc": "蒋嗣宏 (卖方申请人)",
+    "step": "02",
+    "party": "P1"
+  }, {
+    "username": "wangjun_custodian_user02",
+    "passwd": "123456",
+    "desc": "王军 (托管行)",
+    "step": "01",
+    "party": "NA"
+  }, {
+    "username": "zhaohongwei_salesreview_user03",
+    "passwd": "123456",
+    "desc": "赵红卫 (卖方复核人)",
+    "step": "03",
+    "party": "P1"
+  }, {
+    "username": "zhangguangqin_salesapprover_user04",
+    "passwd": "123456",
+    "desc": "张广钦 (卖方审批人)",
+    "step": "04",
+    "party": "P1"
+  }, {
+    "username": "caibo_buyerapprover_user05",
+    "passwd": "123456",
+    "desc": "蔡帛 (买方审核人)",
+    "step": "05",
+    "party": "P2"
+  }, {
+    "username": "zhangzheng_buyerexamine_user06",
+    "passwd": "123456",
+    "desc": "张政 (买方审批人)",
+    "step": "06",
+    "party": "P2"
+  }, {
+    "username": "settlement_user07",
+    "passwd": "123456",
+    "desc": "清算平台",
+    "step": "07",
+    "party": "NA"
+  }]
+}
+

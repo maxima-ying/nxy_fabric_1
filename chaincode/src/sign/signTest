@@ -1,0 +1,27 @@
+cd /opt/gopath/src/github.com/hyperledger/fabric/peer
+
+#register:
+CORE_CHAINCODE_ID_NAME=sign CORE_PEER_ADDRESS=0.0.0.0:30303 /opt/gopath/src/github.com/hyperledger/fabric/BC-NXY/chaincode/sign/sign
+
+#deploy
+peer chaincode deploy -n mycc -c '{"Function":"init", "Args": []}'
+
+#invoke
+peer chaincode invoke -n mycc -c '{"Function": "updateStatus", "Args": ["1111111","01","1]}'
+
+#query
+./peer chaincode query -n sign -c '{"Function":"queryStatus","Args": ["1111111"]}'
+
+./peer chaincode query -n sign -c '{"Function":"invoke_contract_status","Args": ["Status_numbertest00000001"]}'
+
+#invoke
+./peer chaincode invoke -n sign -c '{"Function":"Invoke","Args": ["numbertest00000001","03","salerParty","buyinParty","1000000","BC-NXY_cash_numbertest00000001","1"]}'
+./peer chaincode invoke -n sign -c '{"Function":"Invoke","Args": ["numbertest00000001","02","salerParty","buyinParty","100000","BC-NXY_cash_numbertest00000001","0"]}'
+./peer chaincode invoke -n sign -c '{"Function":"Invoke","Args": ["numbertest00000001","08","salerParty","buyinParty","100000","BC-NXY_cash_numbertest00000001","1"]}'
+
+#deploy 只能运行一次在 register之后，在Invoke, Query之前。
+
+
+
+
+./peer chaincode deploy -p /opt/openchain/src/github.com/hyperledger/fabric/chaincode/cash -c '{"Function":"init","Args": ["numbertest00000001"]}'

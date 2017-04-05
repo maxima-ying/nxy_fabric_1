@@ -1,0 +1,68 @@
+﻿
+---0.第一个窗口 start peer
+CORE_LOGGING_LEVEL=debug peer node start --peer-chaincodedev
+
+
+---1.编译（第二个窗口）
+cd /opt/gopath/src/github.com/hyperledger/fabric/bc-nxy/chaincode/src/bill
+go build
+
+
+---2.注册
+cd /opt/gopath/src/github.com/hyperledger/fabric/peer
+
+#register
+CORE_CHAINCODE_ID_NAME=BC-NXY_contract_numbertest00000001 CORE_PEER_ADDRESS=0.0.0.0:7051 /opt/gopath/src/github.com/hyperledger/fabric/bc-nxy/chaincode/src/bill/bill
+===========
+
+
+---3.发布(第三个新窗口)
+#deploy
+peer chaincode deploy -n BC-NXY_contract_numbertest00000001 -c '{"Function":"init_new", "Args": ["salerParty","8000000","BuyinParty","3000000"]}'
+
+-----------
+
+
+4.测试
+=======Contract
+#invoke
+peer chaincode invoke -n BC-NXY_contract_numbertest00000001 -c '{"Function":"invokeContract", "Args": ["salerParty","numbertest00000001","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","T","salerParty","","21"]}'
+
+-----
+
+#query
+peer chaincode query -n BC-NXY_contract_numbertest00000001 -c '{"Function":"queryContract","Args": ["numbertest00000001"]}'
+=======
+
+
+=======cash
+#invoke
+peer chaincode invoke -n BC-NXY_contract_numbertest00000001 -c '{"Function":"transfer","Args": ["salerParty","BuyinParty","1000"]}'
+
+-----
+
+#query
+peer chaincode query -n BC-NXY_contract_numbertest00000001 -c '{"Function":"queryAccount","Args": ["salerParty"]}'
+peer chaincode query -n BC-NXY_contract_numbertest00000001 -c '{"Function":"queryAccount","Args": ["BuyinParty"]}'
+
+
+=======sign
+#invoke
+peer chaincode invoke -n BC-NXY_contract_numbertest00000001 -c '{"Function":"initStatus","Args": ["numbertest00000001", "01","1"]}'
+peer chaincode invoke -n BC-NXY_contract_numbertest00000001 -c '{"Function":"updateStatus","Args": ["numbertest00000001", "03","1"]}'
+
+-----
+
+#query
+peer chaincode query -n BC-NXY_contract_numbertest00000001 -c '{"Function":"queryStatus","Args": ["numbertest00000001"]}'
+
+
+
+
+
+
+#deploy 只能运行一次在 register之后，在Invoke, Query之前。
+
+
+
+

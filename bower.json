@@ -1,0 +1,41 @@
+{
+  "name": "TOEI-Anima",
+  "version": "1.0.0",
+  "homepage": "https://toei-anima.mybluemix.net/index.html",
+  "authors": [
+    "IBM CIC BlueMix Team"
+  ],
+  "description": "Bootstrap project for TOEI Animation.",
+  "keywords": [
+    "css",
+    "js",
+    "html",
+    "template",
+    "admin",
+    "bootstrap",
+    "theme",
+    "backend",
+    "responsive"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "documentation"
+  ],
+  "dependencies": {
+    "jquery": "^1.9.1",
+    "bootstrap": "^3.3.6",
+    "font-awesome": "^4.6.1",
+    "fastclick": "^1.0.6",
+    "blueimp-tmpl": "^3.4.0",
+    "datatables.net": "^1.10.11",
+    "datatables-i18n": "^1.0.4",
+    "datatables.net-bs": "^1.10.11",
+    "animate.css": "^3.5.1",
+    "pnotify": "^3.0.0",
+    "bootstrap-datepicker": "^1.6.1",
+    "bootbox.js": "bootbox#^4.4.0",
+    "iCheck": "icheck#^1.0.2",
+    "parsleyjs": "^2.3.13"
+  }
+}

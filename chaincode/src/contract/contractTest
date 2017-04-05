@@ -1,0 +1,16 @@
+cd /opt/gopath/src/github.com/hyperledger/fabric/peer
+
+#register
+CORE_CHAINCODE_ID_NAME=BC-NXY_contract_numbertest00000001 CORE_PEER_ADDRESS=0.0.0.0:30303 /opt/gopath/src/github.com/hyperledger/fabric/BC-NXY/chaincode/contract/contract
+
+#deploy
+./peer chaincode deploy -n BC-NXY_contract_numbertest00000001 -c '{"Function":"Init","Args": ["salerParty","numbertest00000001","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","salerParty","","21"]}'
+
+#query
+./peer chaincode query -n BC-NXY_contract_numbertest00000001 -c '{"Function":"Query","Args": ["numbertest00000001"]}'
+
+#invoke
+./peer chaincode invoke -n BC-NXY_contract_numbertest00000001 -c '{"Function":"Init","Args": ["salerParty","numbertest00000001","2","3","4","5","6","7","8","9","99999910","11","12","13","14","15","16","17","18","salerParty","20","21"]}'
+
+
+#deploy 只能运行一次在 register之后，在Invoke, Query之前。

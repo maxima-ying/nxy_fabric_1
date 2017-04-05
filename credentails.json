@@ -1,0 +1,65 @@
+{
+  "peers": [
+    {
+      "discovery_host": "localhost",
+      "discovery_port": 7251,
+      "api_host": "localhost",
+      "api_port_tls": 7250,
+      "api_port": 7250,
+      "event_host": "localhost",
+      "event_port": 7253,
+      "api_url": "http://localhost:7250"
+    },
+    {
+      "discovery_host": "localhost",
+      "discovery_port": 7351,
+      "api_host": "localhost",
+      "api_port_tls": 7350,
+      "api_port": 7350,
+      "event_host": "localhost",
+      "event_port": 7353,
+      "api_url": "http://localhost:7350"
+    },
+    {
+      "discovery_host": "localhost",
+      "discovery_port": 7451,
+      "api_host": "localhost",
+      "api_port_tls": 7450,
+      "api_port": 7450,
+      "event_host": "localhost",
+      "event_port": 7453,
+      "api_url": "http://localhost:7450"
+    },
+    {
+      "discovery_host": "localhost",
+      "discovery_port": 7551,
+      "api_host": "localhost",
+      "api_port_tls": 7550,
+      "api_port": 7550,
+      "event_host": "localhost",
+      "event_port": 7553,
+      "api_url": "http://localhost:7550"
+    }
+  ],
+  "ca": {
+    "dev216047cea0b66fe8365-ca": {
+      "discovery_host": "localhost",
+      "discovery_port": 7154
+    }
+  },
+  "rest": {
+    "chaincode_path": "github.com/hyperledger/fabric/BC-NXY/chaincode",
+    "chaincode_user": "lukas",
+    "chaincode_password": "NPKYL39uKbkj"
+  },
+  "hfc":{
+    "registar":{
+      "user":"WebAppAdmin",
+      "password":"DJY27pEnl16d"
+    },
+    "chaincode_user":{
+      "user":"nxy",
+      "affiliation":"bank_a"
+    }
+  }
+}
