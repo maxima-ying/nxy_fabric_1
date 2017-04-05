@@ -1,0 +1,40 @@
+#复制 test_hfc 目录到 $GOPATH\src\github.com\hyperledger\fabric_1.0_alpha\workspace\
+#也就是 $GOPATH\src\github.com\hyperledger\fabric_1.0_alpha\workspace\test_hfc 下面
+
+vagrant ssh
+
+cd /opt/gopath/src/github.com/hyperledger/fabric_1.0_alpha/workspace/test_hfc
+
+
+docker-compose down
+docker-compose up --force-recreate -d
+
+
+
+
+=======restart==================
+
+#delete all files in followed 2 folders
+
+C:\tmp
+C:\Users\IBM_ADMIN\.hfc-key-store
+
+
+#clear VM side
+docker-compose down
+
+docker rmi -f peer0-peer0-myexccc1-1.0
+
+docker-compose up --force-recreate -d
+
+
+===========测试功能============
+
+
+#http://127.0.0.1:8100/chaincode/init
+
+
+http://127.0.0.1:8100/test/chaincode/query/
+
+
+http://127.0.0.1:8100/test/chaincode/invoke/
