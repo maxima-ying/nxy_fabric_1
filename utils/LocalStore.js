@@ -114,7 +114,7 @@ var LocalStore = function() {
     fs.writeFileSync('./data/chaincode.json', JSON.stringify(data));
   }
 
-  var loadChaincode = function (){
+  var loadChaincode = function () {
     var JsonObj = JSON.parse(fs.readFileSync('./data/chaincode.json'));
     return JsonObj;
   }

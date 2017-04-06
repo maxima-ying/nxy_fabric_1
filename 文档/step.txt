@@ -14,10 +14,15 @@ docker-compose up --force-recreate -d
 
 =======restart==================
 
-#delete all files in followed 2 folders
+#1.删除临时文件：把下面两个目录里的文件都删掉
 
 C:\tmp
 C:\Users\IBM_ADMIN\.hfc-key-store
+
+#2.清理工程目录下的chaincode.json文件
+{"bill":"bill"}  改为   {}     
+注意点：a. 把json文件中的"bill"项删掉或者改名即可。
+        b. 全删掉不行，一定要留个{}在文件里。
 
 
 #clear VM side

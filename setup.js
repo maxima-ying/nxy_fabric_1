@@ -44,7 +44,9 @@ function initPROD(callback) {
         enrollmentSecret: 'adminpw'
     };
 
-  LocalStore.clearBill();
+    var chaincodeConfig = null;
+
+  //LocalStore.clearBill();
 
 
 /*
@@ -138,17 +140,35 @@ function initPROD(callback) {
         // }
           'loginUser':function(callback){
               bc.logonUser(user,  function(error, res) {
-                  if (error) {
-                      logger.error('注册用户%s失败。错误信息:%j', user.enrollmentID, error);
-                      logger.error('程序退出');
-                      process.exit(1);
+                  try {
+                      chaincodeConfig = LocalStore.loadChaincode();
+                  } catch (err) {
+                      logger.info(err);
                   }
-                  else {
-                      logger.info('用户成功登录%s', user.enrollmentID);
 
-                      member = res;
-                      setMember(res);
-                      callback(null, member);
+                  if (chaincodeConfig.bill) {
+                      logger.info('Chaincode已经被部署');
+                      logger.info(chaincodeConfig);
+                      var chaincodeHandlers = bc.getChaincodeHandlers();
+                      chaincodeHandlers['bill'] = chaincodeConfig.bill;
+                      //这里不callback,后面createChannel和deploy就不会做,也不用return
+                      bc.initialize_chain(function(msg){
+                          logger.info('initialize_chain call back: ' + msg);
+                      });
+                      //return;
+                  }else {
+                      if (error) {
+                          logger.error('注册用户%s失败。错误信息:%j', user.enrollmentID, error);
+                          logger.error('程序退出');
+                          process.exit(1);
+                      }
+                      else {
+                          logger.info('用户成功登录%s', user.enrollmentID);
+
+                          member = res;
+                          setMember(res);
+                          callback(null, member);
+                      }
                   }
               });
           },
@@ -244,6 +264,8 @@ function initPROD(callback) {
                 else {
                     callback(null, result);
                     logger.info('initBill成功。');
+                    //清空本地的BC历史数据
+                    LocalStore.clearBill();
                 }
             });
             LocalStore.saveAccount({party: 'P1', cash: '10000000', bill: '0'});

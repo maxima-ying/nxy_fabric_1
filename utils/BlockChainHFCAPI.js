@@ -109,6 +109,8 @@ var bcHFCAPI = function(keyValueStorePath){
 
     var _commonProto = grpc.load('./fabric-client/lib/protos/common/common.proto').common;
 
+    var chaincodeHandlers = new Object();
+
     /*
   // 认证信息
   var ca = credentials.ca;
@@ -168,6 +170,9 @@ var bcHFCAPI = function(keyValueStorePath){
     var logonUser = function(user, callback) {
 
         logger.info('path:'+ '/tmp/hfc-test-kvs_'+ org);
+
+        //var getuser = hfc.getUserContext('admin');
+
         //kvs
         hfc.newDefaultKeyValueStore({
             path: '/tmp/hfc-test-kvs_'+ org
@@ -179,30 +184,33 @@ var bcHFCAPI = function(keyValueStorePath){
                     logger.info('getUserContext---return');
                     if (user && user.isEnrolled()) {
                         logger.info('Successfully loaded member from persistence');
+                        //remember user in variable the_user
+                        the_user = user;
                         // return user;
                         callback(null, user);
                     }
                     else{
+                        //用户不存在的情况下，
                         logger.info('user.isEnrolled() == false');
-                    }
 
-                    var cop = new copService('http://localhost:7054');
-                    var member;
-                    cop.enroll({
-                        enrollmentID: 'admin',
-                        enrollmentSecret: 'adminpw'
-                    }).then(function(enrollment){
-                        logger.info('Successfully enrolled user \'' + 'admin' + '\'');
-                        member = new User('admin', client);
-                        logger.info('new user');
-                        return member.setEnrollment(enrollment.key, enrollment.certificate);
-                    }).then(function(){
-                        logger.info('client setUserContext member--C:\tmp\hfc-test-kvs_peerOrg1 create file admin');
-                        return client.setUserContext(member);
-                    }).then(function(){
-                        logger.info('return member');
-                        callback(null, member);
-                    });
+                        var cop = new copService('http://localhost:7054');
+                        var member;
+                        cop.enroll({
+                            enrollmentID: 'admin',
+                            enrollmentSecret: 'adminpw'
+                        }).then(function(enrollment){
+                            logger.info('Successfully enrolled user \'' + 'admin' + '\'');
+                            member = new User('admin', client);
+                            logger.info('new user');
+                            return member.setEnrollment(enrollment.key, enrollment.certificate);
+                        }).then(function(){
+                            logger.info('client setUserContext member--C:\tmp\hfc-test-kvs_peerOrg1 create file admin');
+                            return client.setUserContext(member);
+                        }).then(function(){
+                            logger.info('return member');
+                            callback(null, member);
+                        });
+                    }
                 });
 
         });
@@ -380,6 +388,15 @@ var bcHFCAPI = function(keyValueStorePath){
                 callback(err);
             }
             else {
+
+                //TODO: add saveChaincode
+                // Deploy request completed successfully
+                //var chaincodeID = response2.chaincodeID;
+                var chaincodeID = chaincode_id;
+                var chaincodeData = LocalStore.loadChaincode();
+                chaincodeData[chaincode] = chaincodeID;
+                LocalStore.saveChaincode(chaincodeData);
+
                 callback(null, result);
             }
         });
@@ -492,6 +509,26 @@ var bcHFCAPI = function(keyValueStorePath){
         logger.info('installProposal-------end---------');
     };
 
+    // when chain is deployed ,before invoke, the chain need to be initialize  (MAYBE)
+    var initialize_chain= function(callback) {
+        logger.info('initialize_Chain-------start---------');
+
+        //the_user = member;
+        the_user.mspImpl._id = 'Org1MSP'; //see config.json
+
+        // read the config block from the orderer for the chain
+        // and initialize the verify MSPs based on the participating
+        // organizations
+        chain.initialize()
+            .then(function(success){
+                logger.info('initialize_Chain OK')
+                sleep(30000);
+            },function(err){
+                logger.error('chain initialize() error');
+                callback('chain initialize() error');
+            });
+    };
+
     // TODO:这里传参 chaincode 和 全局变量 chaincode_path 重复,暂时没用上
     var instantiate_Proposal = function(member, chaincode, functionName, args ,callback) {
         logger.info('instantiateProposal-------start---------');
@@ -585,6 +622,16 @@ var bcHFCAPI = function(keyValueStorePath){
                                     // });
                                     if (response2.status === 'SUCCESS') {
                                         logger.info('Successfully sent instantiate transaction to the orderer.');
+                                        //TODO: add saveChaincode
+                                        /*
+                                        // Deploy request completed successfully
+                                        //var chaincodeID = response2.chaincodeID;
+                                        var chaincodeID = chaincode_id;
+                                        var chaincodeData = LocalStore.loadChaincode();
+                                        chaincodeData[chaincode] = chaincodeID;
+                                        LocalStore.saveChaincode(chaincodeData);
+                                        chaincodeHandlers[chaincode] = chaincodeID;
+                                        */
                                         callback(null, response2);
                                     } else {
                                         logger.error('Failed to order the instantiate endorsement. Error code: ' + response2.status);
@@ -673,6 +720,9 @@ var bcHFCAPI = function(keyValueStorePath){
         nonce = utils.getNonce();
         tx_id = chain.buildTransactionID(nonce, the_user);
 
+        logger.info('invokeChaincode tx_id : ' + tx_id);
+        logger.info('invokeChaincode nonce : ' + nonce);
+
         // send query
         var request = {
             chaincodeId : chaincode,
@@ -713,6 +763,7 @@ var bcHFCAPI = function(keyValueStorePath){
 
                             if (response2.status === 'SUCCESS') {
                                 logger.info('Successfully sent instantiate transaction to the orderer.');
+                                //TODO: call back to saveChaincode
                                 callback(null, response2);
                             } else {
                                 logger.error('Failed to order the instantiate endorsement. Error code: ' + response2.status);
@@ -1016,7 +1067,7 @@ var bcHFCAPI = function(keyValueStorePath){
     //restful test api
     _bcHFCAPI.chaincode_query = chaincode_query;
     _bcHFCAPI.chaincode_invoke = chaincode_invoke;
-
+    _bcHFCAPI.initialize_chain = initialize_chain;
     //---------------------------------------------------------------------'
 
     _bcHFCAPI.create_Channel = create_Channel;
