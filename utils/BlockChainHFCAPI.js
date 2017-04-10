@@ -11,8 +11,16 @@ var EventHub = require('../fabric-client/lib/EventHub.js');
 var User = require('../fabric-client/lib/User.js');
 var copService = require('../fabric-client/lib/FabricCAClientImpl.js');
 var fs = require('fs');
+var path = require('path');
 var grpc = require('grpc');
-var async = require('async');
+
+var testUtil = require('./util.js');
+
+var tx_id = null;
+var nonce = null;
+var the_user = null;
+
+var allEventhubs = [];
 
 //var CHAIN_NAME = 'bc_nxy_chain';
 
@@ -31,7 +39,7 @@ var chain_id = 'mychannel';
 //var chaincode_path = 'github.com/example_cc';
 var chaincode_path = 'bill';
 //var chaincode_path = 'bill2';
-var ORGS = hfc.getConfigSetting('test-network');
+
 
 /*
 var printNetworkDetails = function(peerUrls, caUrl) {
@@ -56,6 +64,8 @@ var bcHFCAPI = function(keyValueStorePath){
 
     var _bcHFCAPI = {};
 
+    var chaincodeHandlers = new Object();
+
     /*
   var chain = hfc.newChain(CHAIN_NAME);
   chain.setKeyValStore(hfc.newFileKeyValStore(keyValueStorePath));
@@ -76,40 +86,14 @@ var bcHFCAPI = function(keyValueStorePath){
     //主入口app.js的相对路径
     hfc.addConfigFile('./data/config.json');
     var ORGS = hfc.getConfigSetting('test-network');
-    logger.info('ORGS ：' + JSON.stringify(ORGS));
-    var org = ORGS.org1.name;
-    logger.info('org ：' + JSON.stringify(org));
-
-    var client = new hfc();
-
-    var chain = client.newChain(chain_id);
-    chain.addOrderer(new Orderer('grpc://localhost:7050'));
-    //TODO because docker-compose.yml
-    // chain.addPeer(new Peer('grpc://localhost:7056'));
-    chain.addPeer(new Peer('grpc://localhost:7051'));
-
-    var targets = [];
-    //TODO because docker-compose.yml
-    // targets.push(new Peer('grpc://localhost:7056'));
-    targets.push(new Peer('grpc://localhost:7051'));
-
-    var eventhubs = [];
-    var eh1 = new EventHub();
-    eh1.setPeerAddr('grpc://localhost:7053');
-    eventhubs.push(eh1);
-
-    //TODO because docker-compose.yml
-    // var eh2 = new EventHub();
-    // eh2.setPeerAddr('grpc://localhost:7058');
-    // eventhubs.push(eh2);
-
-    var tx_id = null;
-    var nonce = null;
-    var the_user = null;
 
     var _commonProto = grpc.load('./fabric-client/lib/protos/common/common.proto').common;
 
-    var chaincodeHandlers = new Object();
+
+
+
+
+    //var chaincodeHandlers = new Object();
 
     /*
   // 认证信息
@@ -167,6 +151,7 @@ var bcHFCAPI = function(keyValueStorePath){
   };
 */
 
+/*
     var logonUser = function(user, callback) {
 
         logger.info('path:'+ '/tmp/hfc-test-kvs_'+ org);
@@ -215,119 +200,212 @@ var bcHFCAPI = function(keyValueStorePath){
 
         });
     };
-
+*/
     var create_Channel = function(callback) {
         logger.info('createChannel-------start---------');
-        var request = null;
 
-        //TODO how to creat mychannel.tx
-        fs.readFile('./docker/mychannel.tx', function(err, data) {
-            if (err) {
-                logger.error('readFile error: ' + err.stack ? err.stack : err);
-                callback('readFile error: ' + err.stack ? err.stack : err);
-            } else {
-                // logger.info('mychannel.tx data:'+data.toString());
+        var client = new hfc();
+        var chain = client.newChain(testUtil.END2END.channel);
 
+        var caRootsPath = ORGS.orderer.tls_cacerts;
+        let data = fs.readFileSync(path.join(__dirname,caRootsPath));
+        let caroots = Buffer.from(data).toString();
+
+        chain.addOrderer(
+            new Orderer(
+                ORGS.orderer.url,
+                {
+                    'pem': caroots,
+                    'ssl-target-name-override': ORGS.orderer['server-hostname']
+                }
+            ));
+
+        // Acting as a client in org1 when creating the channel
+        var org = ORGS.org1.name;
+
+        // utils.setConfigSetting('key-value-store', path.join(__dirname,'../fabric-client/lib/impl/FileKeyValueStore.js'));
+        return hfc.newDefaultKeyValueStore({
+            path: testUtil.storePathForOrg(org)
+        }).then(function(store){
+            client.setStateStore(store);
+            // return testUtil.getSubmitter(client, true, 'org1');
+            return testUtil.getSubmitter(client, 'org1');
+        })
+            .then(function(admin){
+                logger.info('Successfully enrolled user \'admin\'');
+                the_user = admin;
+
+                // readin the envelope to send to the orderer
+                data = fs.readFileSync(path.join(__dirname,'../fixtures/channel/mychannel.tx'));
                 var request = {
                     envelope : data
                 };
                 // send to orderer
-                chain.createChannel(request)
-                    .then(function(response){
-                        logger.info(' response :',response);
-                        if (response && response.status === 'SUCCESS') {
-                            logger.info('Successfully created the channel.');
-                            sleep(5000)
-                                .then(function(nothing){
-                                    logger.info('Successfully created the channel and then wait 5 s.');
-                                    callback(null,null);
-                                },function(err){
-                                    logger.error('Failed to sleep due to error: ' + err.stack ? err.stack : err);
-                                    callback('Failed to sleep due to error: ' + err.stack ? err.stack : err, null);
-                                });
-                        } else {
-                            logger.error('Failed to create the channel. ');
-                            callback('Failed to create the channel. ');
-                        }
-                    },function(err){
-                        logger.error('createChannel error. ' + err.stack ? err.stack : err);
-                        callback('Failed to create the channel. ');
-                    });
-            }
-        });
+                return chain.createChannel(request);
+            }, function(err){
+                logger.error('Failed to enroll user \'admin\'. ' + err);
+                callback('Failed to enroll user \'admin\'. ' + err);
+            })
+            .then(function(response){
+                logger.info(' response ::%j',response);
 
+                if (response && response.status === 'SUCCESS') {
+                    logger.info('Successfully created the channel.');
+                    return sleep(5000);
+                } else {
+                    logger.error('Failed to create the channel. ');
+                    callback('Failed to create the channel. ');
+                }
+            }, function(err){
+                logger.error('Failed to initialize the channel: ' + err.stack ? err.stack : err);
+                callback('Failed to create the channel. ');
+            })
+            .then(function(nothing){
+                logger.info('Successfully waited to make sure new channel was created.');
+                callback(null, the_user);
+            }, function(err){
+                logger.error('Failed to sleep due to error: ' + err.stack ? err.stack : err);
+                callback('Failed to sleep due to error: ' + err.stack ? err.stack : err);
+            });
     };
 
-    var join_Channel = function(member, callback) {
+    var join_Channel = function(org, callback) {
         logger.info('join_Channel-------start---------');
 
-        the_user = member;
-        the_user.mspImpl._id = 'Org1MSP'; //see config.json
+        var client = new hfc();
+        var chain = client.newChain(testUtil.END2END.channel);
+        var caRootsPath = ORGS.orderer.tls_cacerts;
+        let data = fs.readFileSync(path.join(__dirname, caRootsPath));
+        let caroots = Buffer.from(data).toString();
 
-        nonce = utils.getNonce();
-        tx_id = chain.buildTransactionID(nonce, the_user);
-        logger.info('join_Channel tx_id : ' + tx_id);
-        logger.info('join_Channel nonce : ' + nonce);
-        var request = {
-            targets : targets,
-            txId : 	tx_id,
-            nonce : nonce
-        };
+        chain.addOrderer(
+            new Orderer(
+                ORGS.orderer.url,
+                {
+                    'pem': caroots,
+                    'ssl-target-name-override': ORGS.orderer['server-hostname']
+                }
+            )
+        );
 
-        var eventPromises = [];
-        eventhubs.forEach(function(eh){
-            // if (eh.connected() === false) {
-            eh.connect();
-            logger.info('event connect.');
-            // }
-            let txPromise = new Promise(function(resolve, reject){
-                // let handle = setTimeout(reject, 30000);
-                let handle = setTimeout(reject, 90000);
-                eh.registerBlockEvent(function(block){
-                    clearTimeout(handle);
+        var orgName = ORGS[org].name;
 
-                    logger.info('block.data.data.length : ' + block.data.data.length);
-                    // in real-world situations, a peer may have more than one channels so
-                    // we must check that this block came from the channel we asked the peer to join
-                    if(block.data.data.length === 1) {
-                        // Config block must only contain one transaction
-                        var envelope = _commonProto.Envelope.decode(block.data.data[0]);
-                        var payload = _commonProto.Payload.decode(envelope.payload);
-                        logger.info('block.data.data[0].payload : ' + payload);
-                        var channel_header = _commonProto.ChannelHeader.decode(payload.header.channel_header);
-                        logger.info('block.data.data[0].payload.header.channel_header.channel_id : ' + channel_header.channel_id);
+        var targets = [];
+        var eventhubs = [];
 
-                        if (channel_header.channel_id === 'mychannel') {
-                            logger.info('The new channel has been successfully joined on peer '+ eh.ep.addr);
-                            resolve();
+        //new peer
+        for (let key in ORGS[org]) {
+            if (ORGS[org].hasOwnProperty(key)) {
+                if (key.indexOf('peer') === 0) {
+                    data = fs.readFileSync(path.join(__dirname,ORGS[org][key]['tls_cacerts']));
+                    targets.push(
+                        new Peer(
+                            ORGS[org][key].requests,
+                            {
+                                pem: Buffer.from(data).toString(),
+                                'ssl-target-name-override': ORGS[org][key]['server-hostname']
+                            }
+                        )
+                    );
+
+                    let eh = new EventHub();
+                    eh.setPeerAddr(
+                        ORGS[org][key].events,
+                        {
+                            pem: Buffer.from(data).toString(),
+                            'ssl-target-name-override': ORGS[org][key]['server-hostname']
                         }
-                    }
-                    else {
-                        logger.info('block.data.data.length : '+block.data.data.length);
-                        reject();
-                    }
+                    );
+                    eh.connect();
+                    eventhubs.push(eh);
+                    allEventhubs.push(eh);
+                }
+            }
+        }
+
+        return hfc.newDefaultKeyValueStore({
+            path: testUtil.storePathForOrg(orgName)
+        }).then(function(store){
+            client.setStateStore(store);
+            // return testUtil.getSubmitter(client, true, org);
+            return testUtil.getSubmitter(client, org);
+        })
+            .then(function(admin){
+                logger.info('Successfully enrolled user \'admin\'');
+                the_user = admin;
+
+                nonce = utils.getNonce();
+                tx_id = chain.buildTransactionID(nonce, the_user);
+
+                var request = {
+                    targets : targets,
+                    txId : 	tx_id,
+                    nonce : nonce
+                };
+
+                var eventPromises = [];
+                eventhubs.forEach(function(eh){
+                    let txPromise = new Promise(function(resolve, reject){
+                        let handle = setTimeout(reject, 30000);
+
+                        eh.registerBlockEvent(function(block){
+                            clearTimeout(handle);
+
+                            // in real-world situations, a peer may have more than one channels so
+                            // we must check that this block came from the channel we asked the peer to join
+                            if(block.data.data.length === 1) {
+                                // Config block must only contain one transaction
+                                var envelope = _commonProto.Envelope.decode(block.data.data[0]);
+                                var payload = _commonProto.Payload.decode(envelope.payload);
+                                var channel_header = _commonProto.ChannelHeader.decode(payload.header.channel_header);
+
+                                if (channel_header.channel_id === testUtil.END2END.channel) {
+                                    logger.info('The new channel has been successfully joined on peer '+ eh.ep._endpoint.addr);
+                                    resolve();
+                                }
+                            }
+                        });
+                    });
+
+                    eventPromises.push(txPromise);
                 });
-            });
-
-            eventPromises.push(txPromise);
-        });
-
-        var sendPromise = chain.joinChannel(request);
-        Promise.all([sendPromise].concat(eventPromises))
+                let sendPromise = chain.joinChannel(request);
+                return Promise.all([sendPromise].concat(eventPromises));
+                // return Promise.all([sendPromise]);
+            }, function(err){
+                logger.error('Failed to enroll user \'admin\' due to error: ' + err.stack ? err.stack : err);
+                callback('Failed to enroll user \'admin\' due to error: ' + err.stack ? err.stack : err);
+            })
             .then(function(results){
-                eventhubs.forEach(function(eh) {
-                    // if (eh.connected() === true) {
-                    eh.disconnect();
-                    logger.info('event disconnect.');
-                    // }
-                });
-                if(results[0] && results[0][0] && results[0][0].response && results[0][0].response.status === 200) {
-                    logger.info('Successfully joined peers in organization %s to join the channel');
-                    callback(null, the_user);
+                logger.info('Join Channel R E S P O N S E : ', results);
+
+                for(var key in eventhubs) {
+                    var eventhub = eventhubs[key];
+                    if (eventhub && eventhub.isconnected()) {
+                        logger.info('Disconnecting the event hub');
+                        eventhub.disconnect();
+                    }
+                }
+
+                if(results[0] && results[0][0] && results[0][0].response && results[0][0].response.status == 200) {
+                    logger.info('Successfully joined peers in organization '+ orgName +' to join the channel');
+                    callback(null,null);
                 } else {
-                    logger.error(' Failed to join channel');
+                    logger.error('Failed to join channel');
                     callback('Failed to join channel');
                 }
+            }, function(err){
+
+                for(var key in eventhubs) {
+                    var eventhub = eventhubs[key];
+                    if (eventhub && eventhub.isconnected()) {
+                        logger.info('Disconnecting the event hub');
+                        eventhub.disconnect();
+                    }
+                }
+
+                logger.error('Failed to join channel due to error: ' + err.stack ? err.stack : err);
+                callback('Failed to join channel due to error: ' + err.stack ? err.stack : err);
             });
     };
 
@@ -379,10 +457,10 @@ var bcHFCAPI = function(keyValueStorePath){
   };
 */
     // 先做个壳子
-    var deployChaincode = function(member, chaincode, functionName, args, callback) {
+    var deployChaincode = function(org, chaincode, functionName, args, callback) {
         logger.info("deployChaincode ---- start ------")
 
-        instantiate_Proposal(member, chaincode, functionName, args ,function(err,result) {
+        instantiate_Proposal( org, functionName, args ,function(err,result) {
             //member, chaincode, functionName, args ,callback) {
             if (err) {
                 callback(err);
@@ -468,43 +546,102 @@ var bcHFCAPI = function(keyValueStorePath){
         logger.info("deployChaincode ---- end ------")
     }
 
-    var install_Proposal = function(member, chaincode, callback) {
+    var install_Proposal = function(org, callback) {
 
         logger.info('installProposal-------start---------');
 
-        the_user = member;
-        the_user.mspImpl._id = 'Org1MSP'; //see config.json
+        var client = new hfc();
+        var chain = client.newChain(testUtil.END2END.channel);
 
-        nonce = utils.getNonce();
-        tx_id = chain.buildTransactionID(nonce, the_user);
-        logger.info('create tx_id：' + tx_id);
+        var caRootsPath = ORGS.orderer.tls_cacerts;
+        let data = fs.readFileSync(path.join(__dirname, caRootsPath));
+        let caroots = Buffer.from(data).toString();
 
-        // send proposal to endorser
-        var request = {
-            targets: targets,
-            chaincodePath: chaincode_path,
-            //chaincodePath: chaincode,
-            chaincodeId: chaincode_id,
-            chaincodeVersion: chaincode_version,
-            txId: tx_id,
-            nonce: nonce,
-            chaincodeType: 'golang'   //golang or car (default:golang)
-        };
-        logger.info('installProposal----chaincodePath:'+ request.chaincodePath + ' -----  chaincode_id: ' + request.chaincodeId + ' -----  chaincodeVersion: ' + request.chaincodeVersion);
-        chain.sendInstallProposal(request)
-            .then(function(results){
-                var proposalResponses = results[0];
-                var proposal = results[1];
-                var header   = results[2];
+        chain.addOrderer(
+            new Orderer(
+                ORGS.orderer.url,
+                {
+                    'pem': caroots,
+                    'ssl-target-name-override': ORGS.orderer['server-hostname']
+                }
+            )
+        );
 
+        var orgName = ORGS[org].name;
+
+        var targets = [];
+        for (let key in ORGS[org]) {
+            if (ORGS[org].hasOwnProperty(key)) {
+                if (key.indexOf('peer') === 0) {
+                    let data = fs.readFileSync(path.join(__dirname,ORGS[org][key]['tls_cacerts']));
+                    let peer = new Peer(
+                        ORGS[org][key].requests,
+                        {
+                            pem: Buffer.from(data).toString(),
+                            'ssl-target-name-override': ORGS[org][key]['server-hostname']
+                        }
+                    );
+
+                    targets.push(peer);
+                    chain.addPeer(peer);
+                }
+            }
+        }
+
+        return hfc.newDefaultKeyValueStore({
+            path: testUtil.storePathForOrg(orgName)
+        }).then(function(store){
+            client.setStateStore(store);
+            // return testUtil.getSubmitter(client, true, org);
+            return testUtil.getSubmitter(client, org);
+        }).then(function(admin){
+            logger.info('Successfully enrolled user \'admin\'');
+            the_user = admin;
+
+            nonce = utils.getNonce();
+            tx_id = chain.buildTransactionID(nonce, the_user);
+
+            // send proposal to endorser
+            var request = {
+                targets: targets,
+                chaincodePath: testUtil.CHAINCODE_PATH,
+                chaincodeId: testUtil.END2END.chaincodeId,
+                chaincodeVersion: testUtil.END2END.chaincodeVersion,
+                txId: tx_id,
+                nonce: nonce
+            };
+
+            return chain.sendInstallProposal(request);
+        },function(err){
+            logger.error('Failed to enroll user \'admin\'. ' + err);
+            callback('Failed to enroll user \'admin\'. ' + err);
+        }).then(function(results){
+            var proposalResponses = results[0];
+
+            var proposal = results[1];
+            var header   = results[2];
+            var all_good = true;
+            for(var i in proposalResponses) {
+                let one_good = false;
                 if (proposalResponses && proposalResponses[0].response && proposalResponses[0].response.status === 200) {
-                    logger.info('Successfully sent install Proposal and received ProposalResponse: Status - '+ proposalResponses[0].response.status);
-                    callback(null, the_user);
+                    one_good = true;
+                    logger.info('install proposal was good');
                 } else {
                     logger.error('install proposal was bad');
-                    callback('install proposal was bad');
                 }
-            });
+                all_good = all_good & one_good;
+            }
+            if (all_good) {
+                logger.info('Successfully sent install Proposal and received ProposalResponse: Status - '+ proposalResponses[0].response.status);
+                callback(null);
+            } else {
+                logger.error('Failed to send install Proposal or receive valid response. Response null or status is not 200. exiting...');
+                callback('Failed to send install Proposal or receive valid response. Response null or status is not 200. exiting...');
+            }
+        },function(err){
+            logger.info('Failed to send install proposal due to error: ' + err.stack ? err.stack : err);
+            callback('Failed to send install proposal due to error: ' + err.stack ? err.stack : err);
+        });
 
         logger.info('installProposal-------end---------');
     };
@@ -530,142 +667,201 @@ var bcHFCAPI = function(keyValueStorePath){
     };
 
     // TODO:这里传参 chaincode 和 全局变量 chaincode_path 重复,暂时没用上
-    var instantiate_Proposal = function(member, chaincode, functionName, args ,callback) {
-        logger.info('instantiateProposal-------start---------');
+    var instantiate_Proposal = function(org, functionName, args ,callback) {
+        logger.info('instantiate_Chaincode-------start---------');
 
-        the_user = member;
-        the_user.mspImpl._id = 'Org1MSP'; //see config.json
+        var client = new hfc();
+        var chain = client.newChain(testUtil.END2END.channel);
 
-        // read the config block from the orderer for the chain
-        // and initialize the verify MSPs based on the participating
-        // organizations
-        chain.initialize()
-            .then(function(success){
-                nonce = utils.getNonce();
-                tx_id = chain.buildTransactionID(nonce, the_user);
+        var caRootsPath = ORGS.orderer.tls_cacerts;
+        let data = fs.readFileSync(path.join(__dirname,caRootsPath));
+        let caroots = Buffer.from(data).toString();
 
-                // send proposal to endorser
+        chain.addOrderer(
+            new Orderer(
+                ORGS.orderer.url,
+                {
+                    'pem': caroots,
+                    'ssl-target-name-override': ORGS.orderer['server-hostname']
+                }
+            )
+        );
+
+        var orgName = ORGS[org].name;
+
+        var targets = [];
+        var eventhubs = [];
+
+        // set up the chain to use each org's 'peer1' for
+        // both requests and events
+        let key = org;
+        if (key) {
+            // for (let key in ORGS) {
+            if (ORGS.hasOwnProperty(key) && typeof ORGS[key].peer1 !== 'undefined') {
+                let data = fs.readFileSync(path.join(__dirname,ORGS[key].peer1['tls_cacerts']));
+                let peer = new Peer(
+                    ORGS[key].peer1.requests,
+                    {
+                        pem: Buffer.from(data).toString(),
+                        'ssl-target-name-override': ORGS[key].peer1['server-hostname']
+                    }
+                );
+                chain.addPeer(peer);
+
+                let eh = new EventHub();
+                eh.setPeerAddr(
+                    ORGS[key].peer1.events,
+                    {
+                        pem: Buffer.from(data).toString(),
+                        'ssl-target-name-override': ORGS[key].peer1['server-hostname']
+                    }
+                );
+                eh.connect();
+                eventhubs.push(eh);
+                allEventhubs.push(eh);
+            }
+        }
+
+        return hfc.newDefaultKeyValueStore({
+            path: testUtil.storePathForOrg(orgName)
+        }).then(function(store){
+            client.setStateStore(store);
+            // return testUtil.getSubmitter(client, true, org);
+            return testUtil.getSubmitter(client, org);
+        }).then(function(admin){
+            logger.info('Successfully enrolled user \'admin\'');
+            the_user = admin;
+
+            // read the config block from the orderer for the chain
+            // and initialize the verify MSPs based on the participating
+            // organizations
+            return chain.initialize();
+        }, function(err){
+            logger.error('Failed to enroll user \'admin\'. ' + err);
+            callback('Failed to enroll user \'admin\'. ' + err);
+        }).then(function(success){
+            nonce = utils.getNonce();
+            tx_id = chain.buildTransactionID(nonce, the_user);
+            // send proposal to endorser
+            var request = {
+                chaincodePath: testUtil.CHAINCODE_PATH,
+                chaincodeId: testUtil.END2END.chaincodeId,
+                chaincodeVersion: testUtil.END2END.chaincodeVersion,
+                //fcn: 'init',
+                fcn: functionName,
+                //args: ['a', '100', 'b', '200'],
+                args: args,
+                chainId: testUtil.END2END.channel,
+                txId: tx_id,
+                nonce: nonce
+            };
+            return chain.sendInstantiateProposal(request);
+        }, function(err){
+            logger.error('Failed to initialize the chain');
+            throw new Error('Failed to initialize the chain');
+        }).then(function(results){
+            var proposalResponses = results[0];
+            var proposal = results[1];
+            var header   = results[2];
+            var all_good = true;
+            for(var i in proposalResponses) {
+                let one_good = false;
+                if (proposalResponses && proposalResponses[0].response && proposalResponses[0].response.status === 200) {
+                    one_good = true;
+                    logger.info('instantiate proposal was good');
+                } else {
+                    logger.error('instantiate proposal was bad');
+                }
+                all_good = all_good & one_good;
+            }
+            if (all_good) {
+                logger.info('Successfully sent Proposal and received ProposalResponse: Status - '+proposalResponses[0].response.status+'' +
+                    ', message - "'+proposalResponses[0].response.message+'"' +
+                    ', metadata - "'+proposalResponses[0].response.payload+'"' +
+                    ', endorsement signature: '+proposalResponses[0].endorsement.signature);
+
                 var request = {
-                    chaincodePath:  chaincode_path,
-                    //chaincodePath:  chaincode,
-                    chaincodeId: chaincode_id,
-                    chaincodeVersion: chaincode_version,
-                    //fcn: 'init',
-                    fcn: functionName,
-                    //args: ['a', '100', 'b', '200'],
-                    args: args,
-                    chainId: chain_id,
-                    txId: tx_id,
-                    nonce: nonce
+                    proposalResponses: proposalResponses,
+                    proposal: proposal,
+                    header: header
                 };
 
-                logger.info('instantiate proposal----chaincodePath:'+ request.chaincodePath + ' -----  chaincode_id: ' + request.chaincodeId + ' -----  chaincodeVersion: ' + request.chaincodeVersion);
-                logger.info('instantiate proposal----args:'+ args);
-                chain.sendInstantiateProposal(request)
+                // set the transaction listener and set a timeout of 30sec
+                // if the transaction did not get committed within the timeout period,
+                // fail the test
+                // var deployId = tx_id.toString();
+                //
+                // var eventPromises = [];
+                // eventhubs.forEach(function(eh){
+                //     let txPromise = new Promise(function(resolve, reject){
+                //         let handle = setTimeout(reject, 30000);
+                //
+                //         eh.registerTxEvent(deployId.toString(), function(tx, code){
+                //             logger.info('The chaincode instantiate transaction has been committed on peer '+ eh.ep._endpoint.addr);
+                //             clearTimeout(handle);
+                //             eh.unregisterTxEvent(deployId);
+                //             if (code !== 'VALID') {
+                //                 logger.error('The chaincode instantiate transaction was invalid, code = ' + code);
+                //                 reject();
+                //             } else {
+                //                 logger.info('The chaincode instantiate transaction was valid.');
+                //                 resolve();
+                //             }
+                //         });
+                //     });
+                //     eventPromises.push(txPromise);
+                // });
+
+                var sendPromise = chain.sendTransaction(request);
+                // return Promise.all([sendPromise].concat(eventPromises))
+                return Promise.all([sendPromise])
                     .then(function(results){
-                        var proposalResponses = results[0];
-                        var proposal = results[1];
-                        var header   = results[2];
-                        if (proposalResponses && proposalResponses[0].response && proposalResponses[0].response.status === 200) {
-                            logger.info('Successfully sent Proposal and received ProposalResponse:'
-                                +' Status - '+proposalResponses[0].response.status
-                                +' message - '+proposalResponses[0].response.message
-                                +', metadata - '+proposalResponses[0].response.payload
-                                +', endorsement signature: '+proposalResponses[0].endorsement.signature);
-
-                            var request = {
-                                proposalResponses: proposalResponses,
-                                proposal: proposal,
-                                header: header
-                            };
-                            var deployId = tx_id.toString();  //eventhub 用
-
-                            // var eventPromises2 = [];
-                            // eventhubs.forEach(function(eh){
-                            //     // if(eh.connected()===false){
-                            //         eh.connect();
-                            //         logger.info('event connect.');
-                            //     // }
-                            //     let txPromise = new Promise(function(resolve, reject){
-                            //             let handle = setTimeout(reject, 30000);
-                            //         eh.registerTxEvent(deployId.toString(), function(tx, code){
-                            //             logger.info('The chaincode instantiate transaction has been committed on peer '+ eh.ep.addr);
-                            //             clearTimeout(handle);
-                            //             eh.unregisterTxEvent(deployId);
-                            //
-                            //             if (code !== 'VALID') {
-                            //                 logger.error('The chaincode instantiate transaction was invalid, code = ' + code);
-                            //                 reject();
-                            //             } else {
-                            //                 logger.info('The chaincode instantiate transaction was valid.');
-                            //                 resolve();
-                            //             }
-                            //         });
-                            //      });
-                            //     eventPromises2.push(txPromise);
-                            // });
-
-                            logger.info('chain.sendTransaction start.');
-                            var sendPromise2 = chain.sendTransaction(request);
-                            // Promise.all([sendPromise2].concat(eventPromises2))
-                            Promise.all([sendPromise2])
-                                .then(function(results){
-                                    //logger.info('sendTransaction results[0]:' + results[0]);
-                                    logger.info('sendTransaction results[0]:' + results[0].status);
-                                    var response2 =  results[0];
-
-                                    // eventhubs.forEach(function(eh) {
-                                    //     // if (eh.connected() === true) {
-                                    //     eh.disconnect();
-                                    //     logger.info('event disconnect.');
-                                    //     // }
-                                    // });
-                                    if (response2.status === 'SUCCESS') {
-                                        logger.info('Successfully sent instantiate transaction to the orderer.');
-                                        //TODO: add saveChaincode
-                                        /*
-                                        // Deploy request completed successfully
-                                        //var chaincodeID = response2.chaincodeID;
-                                        var chaincodeID = chaincode_id;
-                                        var chaincodeData = LocalStore.loadChaincode();
-                                        chaincodeData[chaincode] = chaincodeID;
-                                        LocalStore.saveChaincode(chaincodeData);
-                                        chaincodeHandlers[chaincode] = chaincodeID;
-                                        */
-                                        callback(null, response2);
-                                    } else {
-                                        logger.error('Failed to order the instantiate endorsement. Error code: ' + response2.status);
-                                        callback('Failed to order the instantiate endorsement. Error code: ' + response2.status);
-                                    }
-
-                                }).catch(function(err){
-                                logger.error('sendTransaction eventPromises error: ' + err);
-                                callback('sendTransaction eventPromises error. ');
-                            });
-                            // .then(function(response){
-                            //     eventhubs.forEach(function(eh) {
-                            //         // if (eh.connected() === true) {
-                            //             eh.disconnect();
-                            //             logger.info('event disconnect.');
-                            //         // }
-                            //     });
-                            //     if (response.status === 'SUCCESS') {
-                            //         logger.info('Successfully sent instantiate transaction to the orderer.');
-                            //         callback(null, response);
-                            //     } else {
-                            //         logger.error('Failed to order the instantiate endorsement. Error code: ' + response.status);
-                            //         callback('Failed to order the instantiate endorsement. Error code: ' + response.status);
-                            //     }
-                            // });
-                        } else {
-                            logger.error('instantiate proposal was bad');
-                            callback('instantiate proposal was bad');
-                        }
+                        logger.info('Event promise all complete and testing complete');
+                        return results[0]; // the first returned value is from the 'sendPromise' which is from the 'sendTransaction()' call
+                    }).catch(function(err){
+                        logger.error('Failed to send instantiate transaction and get notifications within the timeout period.');
+                        callback('Failed to send instantiate transaction and get notifications within the timeout period.');
                     });
-            },function(err){
-                logger.error('chain initialize() error');
-                callback('chain initialize() error');
-            });
+            } else {
+                logger.error('Failed to send instantiate Proposal or receive valid response. Response null or status is not 200. exiting...');
+                callback('Failed to send instantiate Proposal or receive valid response. Response null or status is not 200. exiting...');
+            }
+        }, function(err){
+            logger.error('Failed to send instantiate proposal due to error: ' + err.stack ? err.stack : err);
+            callback('Failed to send instantiate proposal due to error: ' + err.stack ? err.stack : err);
+        }).then(function(response){
+
+            for(var key in eventhubs) {
+                var eventhub = eventhubs[key];
+                if (eventhub && eventhub.isconnected()) {
+                    logger.info('Disconnecting the event hub');
+                    eventhub.disconnect();
+                }
+            }
+
+            if (response.status === 'SUCCESS') {
+                logger.info('Successfully sent transaction to the orderer.');
+                sleep(10000).then(function(nothing) {
+                    logger.info('wait 10 s before callback.');
+                    callback(null,null);
+                });
+            } else {
+                logger.error('Failed to order the transaction. Error code: ' + response.status);
+                callback('Failed to order the transaction. Error code: ' + response.status);
+            }
+        }, function(err){
+
+            for(var key in eventhubs) {
+                var eventhub = eventhubs[key];
+                if (eventhub && eventhub.isconnected()) {
+                    logger.info('Disconnecting the event hub');
+                    eventhub.disconnect();
+                }
+            }
+
+            logger.error('Failed to send instantiate due to error: ' + err.stack ? err.stack : err);
+            callback('Failed to send instantiate due to error: ' + err.stack ? err.stack : err);
+        });
     };
 
 /*
@@ -709,153 +905,151 @@ var bcHFCAPI = function(keyValueStorePath){
     };
 */
     // 做成跟原来一样的接口
-    var invokeChaincode = function(member, chaincode, functionName, args, callback) {
-        logger.info('invokeChaincode-------start---------');
-        logger.info('invokeChaincode wait 30 s.');
-
-
-        the_user = member;
-        the_user.mspImpl._id = 'Org1MSP'; //see config.json
-
-        nonce = utils.getNonce();
-        tx_id = chain.buildTransactionID(nonce, the_user);
-
-        logger.info('invokeChaincode tx_id : ' + tx_id);
-        logger.info('invokeChaincode nonce : ' + nonce);
-
-        // send query
-        var request = {
-            chaincodeId : chaincode,
-            chaincodeVersion : chaincode_version,
-            chainId: chain_id,
-            txId: tx_id,
-            nonce: nonce,
-            fcn: functionName,
-            args: args
-        };
-        //chain.sendInstantiateProposal(request)
-        var invokeTx = chain.sendTransactionProposal(request)
-            .then(function(results){
-                var proposalResponses = results[0];
-                var proposal = results[1];
-                var header   = results[2];
-                if (proposalResponses && proposalResponses[0].response && proposalResponses[0].response.status === 200) {
-                    logger.info('Successfully sent Proposal and received ProposalResponse:'
-                        +' Status - '+proposalResponses[0].response.status
-                        +' message - '+proposalResponses[0].response.message
-                        +', metadata - '+proposalResponses[0].response.payload
-                        +', endorsement signature: '+proposalResponses[0].endorsement.signature);
-
-                    var request = {
-                        proposalResponses: proposalResponses,
-                        proposal: proposal,
-                        header: header
-                    };
-                    var deployId = tx_id.toString();  //eventhub 用
-
-                    logger.info('chain.sendTransaction start.');
-                    var sendPromise2 = chain.sendTransaction(request);
-                    // Promise.all([sendPromise2].concat(eventPromises2))
-                    Promise.all([sendPromise2])
-                        .then(function(results){
-                            logger.info('sendTransaction results[0]:' + results[0]);
-                            var response2 =  results[0];
-
-                            if (response2.status === 'SUCCESS') {
-                                logger.info('Successfully sent instantiate transaction to the orderer.');
-                                //TODO: call back to saveChaincode
-                                callback(null, response2);
-                            } else {
-                                logger.error('Failed to order the instantiate endorsement. Error code: ' + response2.status);
-                                callback('Failed to order the instantiate endorsement. Error code: ' + response2.status);
-                            }
-
-                        }).catch(function(err){
-                        logger.error('sendTransaction eventPromises error: ' + err);
-                        callback('sendTransaction eventPromises error. ');
-                    });
-                } else {
-                    logger.error('instantiate proposal was bad');
-                    callback('instantiate proposal was bad');
-                }
-            });
-    };
-
-    // 验证用的方法，来自test_hfc
-    var invoke_by_chaincode = function(member, callback) {
+    var invokeChaincode = function(org, chaincode, functionName, args, callback) {
         logger.info('invoke_by_chaincode-------start---------');
-        sleep(30000).then(function(nothing){
-            logger.info('invoke_by_chaincode wait 30 s.');
 
+        if (!org) {
+            org = 'org1';
+        }
 
-            the_user = member;
-            the_user.mspImpl._id = 'Org1MSP'; //see config.json
+        var client = new hfc();
+        var chain = client.newChain(testUtil.END2END.channel);
 
+        var orgName = ORGS[org].name;
+
+        var targets = [];
+        // set up the chain to use each org's 'peer1' for
+        // both requests and events
+        let key = org;
+        if (key) {
+            // for (let key in ORGS) {
+            if (ORGS.hasOwnProperty(key) && typeof ORGS[key].peer1 !== 'undefined') {
+                let data = fs.readFileSync(path.join(__dirname,ORGS[key].peer1['tls_cacerts']));
+                let peer = new Peer(
+                    ORGS[key].peer1.requests,
+                    {
+                        pem: Buffer.from(data).toString(),
+                        'ssl-target-name-override': ORGS[key].peer1['server-hostname']
+                    });
+                chain.addPeer(peer);
+            }
+        }
+
+        return hfc.newDefaultKeyValueStore({
+            path: testUtil.storePathForOrg(orgName)
+        }).then(function(store){
+            client.setStateStore(store);
+            // return testUtil.getSubmitter(client, true, org);
+            return testUtil.getSubmitter(client, org);
+        }).then(function(admin){
+            the_user = admin;
             nonce = utils.getNonce();
             tx_id = chain.buildTransactionID(nonce, the_user);
 
             // send query
             var request = {
-                chaincodeId : chaincode_id,
-                chaincodeVersion : chaincode_version,
-                chainId: chain_id,
+                chaincodeId : testUtil.END2END.chaincodeId,
+                chaincodeVersion : testUtil.END2END.chaincodeVersion,
+                chainId: testUtil.END2END.channel,
+                txId: tx_id,
+                nonce: nonce,
+                fcn: functionName,
+                args: args
+            };
+
+            return chain.queryByChaincode(request);
+        },function(err){
+            logger.info('Failed to get submitter \'admin\'. Error: ' + err.stack ? err.stack : err );
+            callback('Failed to get submitter \'admin\'. Error: ' + err.stack ? err.stack : err );
+        }).then(function(response_payloads){
+            if (response_payloads) {
+                for(let i = 0; i < response_payloads.length; i++) {
+                    logger.info("query result:" + response_payloads[i].toString('utf8'));
+                }
+                callback(null,response_payloads[0].toString('utf8'));
+            } else {
+                logger.error('response_payloads is null');
+                callback('response_payloads is null');
+            }
+        },function(err){
+            logger.error('Failed to send query due to error: ' + err.stack ? err.stack : err);
+            callback('Failed to send query due to error: ' + err.stack ? err.stack : err);
+        }).catch(function(err){
+            logger.error('Failed to end to end test with error:' + err.stack ? err.stack : err);
+            callback('Failed to end to end test with error:' + err.stack ? err.stack : err);
+        });
+
+    };
+
+    // 验证用的方法，来自test_hfc
+    var invoke_by_chaincode = function(member, callback) {
+        logger.info('query_by_chaincode-------start---------');
+
+        var client = new hfc();
+        var chain = client.newChain(testUtil.END2END.channel);
+
+        var orgName = ORGS[org].name;
+
+        var targets = [];
+        // set up the chain to use each org's 'peer1' for
+        // both requests and events
+        let key = org;
+        if (key) {
+            // for (let key in ORGS) {
+            if (ORGS.hasOwnProperty(key) && typeof ORGS[key].peer1 !== 'undefined') {
+                let data = fs.readFileSync(path.join(__dirname,ORGS[key].peer1['tls_cacerts']));
+                let peer = new Peer(
+                    ORGS[key].peer1.requests,
+                    {
+                        pem: Buffer.from(data).toString(),
+                        'ssl-target-name-override': ORGS[key].peer1['server-hostname']
+                    });
+                chain.addPeer(peer);
+            }
+        }
+
+        return hfc.newDefaultKeyValueStore({
+            path: testUtil.storePathForOrg(orgName)
+        }).then(function(store){
+            client.setStateStore(store);
+            // return testUtil.getSubmitter(client, true, org);
+            return testUtil.getSubmitter(client, org);
+        }).then(function(admin){
+            the_user = admin;
+            nonce = utils.getNonce();
+            tx_id = chain.buildTransactionID(nonce, the_user);
+
+            // send query
+            var request = {
+                chaincodeId : testUtil.END2END.chaincodeId,
+                chaincodeVersion : testUtil.END2END.chaincodeVersion,
+                chainId: testUtil.END2END.channel,
                 txId: tx_id,
                 nonce: nonce,
                 fcn: 'transfer',
                 //args: ['move','a','b',"5"]
                 args: ['P1','P2','5']
             };
-            //chain.sendInstantiateProposal(request)
-            chain.sendTransactionProposal(request)
-                .then(function(results){
-                    var proposalResponses = results[0];
-                    var proposal = results[1];
-                    var header   = results[2];
-                    if (proposalResponses && proposalResponses[0].response && proposalResponses[0].response.status === 200) {
-                        logger.info('Successfully sent Proposal and received ProposalResponse:'
-                            +' Status - '+proposalResponses[0].response.status
-                            +' message - '+proposalResponses[0].response.message
-                            +', metadata - '+proposalResponses[0].response.payload
-                            +', endorsement signature: '+proposalResponses[0].endorsement.signature);
-
-                        var request = {
-                            proposalResponses: proposalResponses,
-                            proposal: proposal,
-                            header: header
-                        };
-                        var deployId = tx_id.toString();  //eventhub 用
-
-                        logger.info('chain.sendTransaction start.');
-                        var sendPromise2 = chain.sendTransaction(request);
-                        // Promise.all([sendPromise2].concat(eventPromises2))
-                        Promise.all([sendPromise2])
-                            .then(function(results){
-                                logger.info('sendTransaction results[0]:' + results[0]);
-                                var response2 =  results[0];
-
-                                if (response2.status === 'SUCCESS') {
-                                    logger.info('Successfully sent instantiate transaction to the orderer.');
-                                    callback(null, response2);
-                                } else {
-                                    logger.error('Failed to order the instantiate endorsement. Error code: ' + response2.status);
-                                    callback('Failed to order the instantiate endorsement. Error code: ' + response2.status);
-                                }
-
-                            }).catch(function(err){
-                            logger.error('sendTransaction eventPromises error: ' + err);
-                            callback('sendTransaction eventPromises error. ');
-                        });
-                    } else {
-                        logger.error('instantiate proposal was bad');
-                        callback('instantiate proposal was bad');
-                    }
-                });
-
-
-            // callback(null,null);
+            return chain.queryByChaincode(request);
         },function(err){
-            logger.error('Failed to sleep due to error: ' + err.stack ? err.stack : err);
-            callback('Failed to sleep due to error: ' + err.stack ? err.stack : err, null);
+            logger.info('Failed to get submitter \'admin\'. Error: ' + err.stack ? err.stack : err );
+            callback('Failed to get submitter \'admin\'. Error: ' + err.stack ? err.stack : err );
+        }).then(function(response_payloads){
+            if (response_payloads) {
+                for(let i = 0; i < response_payloads.length; i++) {
+                    logger.info("query result:" + response_payloads[i].toString('utf8'));
+                }
+                callback(null,response_payloads[0].toString('utf8'));
+            } else {
+                logger.error('response_payloads is null');
+                callback('response_payloads is null');
+            }
+        },function(err){
+            logger.error('Failed to send query due to error: ' + err.stack ? err.stack : err);
+            callback('Failed to send query due to error: ' + err.stack ? err.stack : err);
+        }).catch(function(err){
+            logger.error('Failed to end to end test with error:' + err.stack ? err.stack : err);
+            callback('Failed to end to end test with error:' + err.stack ? err.stack : err);
         });
     };
 
@@ -893,37 +1087,37 @@ var bcHFCAPI = function(keyValueStorePath){
     //     return deployChaincode(member, 'sign', 'initSign', args, callback);
     // };
 
-    var initBill = function(member, args, callback){
-        member = getMember(member);
+    var initBill = function(org, args, callback){
+        //member = getMember(null);
         logger.info('正在部署bill');
-        return deployChaincode(member, 'bill', 'initBill', args, callback);
+        return deployChaincode(org, 'bill', 'initBill', args, callback);
     };
     //2017/01/23 chaincode合并 end
 
-    var invokeSign = function(member, functionName, args, callback) {
-        member = getMember(member);
+    var invokeSign = function(org, functionName, args, callback) {
+        //member = getMember(member);
 
         //2017/01/23 chaincode合并 start
         // return invokeChaincode(member,'sign', functionName, args, callback);
-        return invokeChaincode(member,'bill', functionName, args, callback);
+        return invokeChaincode(org,'bill', functionName, args, callback);
         //2017/01/23 chaincode合并 end
     };
 
-    var invokeContract = function(member, functionName, args, callback){
-        member = getMember(member);
+    var invokeContract = function(org, functionName, args, callback){
+        //member = getMember(member);
 
         //2017/01/23 chaincode合并 start
         // return invokeChaincode(member,'contract', functionName, args, callback);
-        return invokeChaincode(member,'bill', functionName, args, callback);
+        return invokeChaincode(org,'bill', functionName, args, callback);
         //2017/01/23 chaincode合并 end
     };
 
-    var invokeCash = function(member, functionName, args, callback){
-        member = getMember(member);
+    var invokeCash = function(org, functionName, args, callback){
+        //member = getMember(member);
 
         //2017/01/23 chaincode合并 start
         // return invokeChaincode(member,'cash', functionName, args, callback);
-        return invokeChaincode(member,'bill', functionName, args, callback);
+        return invokeChaincode(org,'bill', functionName, args, callback);
         //2017/01/23 chaincode合并 end
     };
 
@@ -987,57 +1181,74 @@ var bcHFCAPI = function(keyValueStorePath){
 
 
 
-    //TODO: debug
     var query_by_chaincode = function(member, callback) {
-        logger.info('query_by_chaincode-------start---------');
-        sleep(30000).then(function(nothing){
-            logger.info('query_by_chaincode wait 30 s.');
+         logger.info('query_by_chaincode-------start---------');
 
+        var client = new hfc();
+        var chain = client.newChain(testUtil.END2END.channel);
 
-            the_user = member;
-            the_user.mspImpl._id = 'Org1MSP'; //see config.json
+        var orgName = ORGS[org].name;
 
+        var targets = [];
+        // set up the chain to use each org's 'peer1' for
+        // both requests and events
+        let key = org;
+        if (key) {
+            // for (let key in ORGS) {
+            if (ORGS.hasOwnProperty(key) && typeof ORGS[key].peer1 !== 'undefined') {
+                let data = fs.readFileSync(path.join(__dirname,ORGS[key].peer1['tls_cacerts']));
+                let peer = new Peer(
+                    ORGS[key].peer1.requests,
+                    {
+                        pem: Buffer.from(data).toString(),
+                        'ssl-target-name-override': ORGS[key].peer1['server-hostname']
+                    });
+                chain.addPeer(peer);
+            }
+        }
+
+        return hfc.newDefaultKeyValueStore({
+            path: testUtil.storePathForOrg(orgName)
+        }).then(function(store){
+            client.setStateStore(store);
+            // return testUtil.getSubmitter(client, true, org);
+            return testUtil.getSubmitter(client, org);
+        }).then(function(admin){
+            the_user = admin;
             nonce = utils.getNonce();
             tx_id = chain.buildTransactionID(nonce, the_user);
 
-            str_fcn = 'queryAccount';
-            str_args = 'P1';
-
             // send query
             var request = {
-                chaincodeId : chaincode_id,
-                chaincodeVersion : chaincode_version,
-                chainId: chain_id,
+                chaincodeId : testUtil.END2END.chaincodeId,
+                chaincodeVersion : testUtil.END2END.chaincodeVersion,
+                chainId: testUtil.END2END.channel,
                 txId: tx_id,
                 nonce: nonce,
                 fcn: 'queryAccount',
                 //args: ['query','b']
                 args: [ 'P1']
             };
-            logger.info('query----chaincodePath:' + ' -----  chaincode_id: ' + request.chaincodeId + ' -----  chaincodeVersion: ' + request.chaincodeVersion);
-            logger.info('query----fcn:' +  request.fcn+ ' -----  args: ' + request.args );
-            chain.queryByChaincode(request)
-                .then(function(response_payloads){
-                    if (response_payloads) {
-                        for(let i = 0; i < response_payloads.length; i++) {
-                            // t.equal(response_payloads[i].toString('utf8'),'300','checking query results are correct that user b has 300 now after the move');
-                            logger.info('query response_payloads:' + response_payloads[i].toString('utf8'));
-                        }
-                        callback(null,response_payloads[0].toString('utf8'));
-                    } else {
-                        logger.error('response_payloads is null');
-                        callback('response_payloads is null');
-                    }
-                },function(err){
-                    logger.error('chain query error');
-                    callback('chain query error');
-                });
-
-
-            // callback(null,null);
+            return chain.queryByChaincode(request);
         },function(err){
-            logger.error('Failed to sleep due to error: ' + err.stack ? err.stack : err);
-            callback('Failed to sleep due to error: ' + err.stack ? err.stack : err, null);
+            logger.info('Failed to get submitter \'admin\'. Error: ' + err.stack ? err.stack : err );
+            callback('Failed to get submitter \'admin\'. Error: ' + err.stack ? err.stack : err );
+        }).then(function(response_payloads){
+            if (response_payloads) {
+                for(let i = 0; i < response_payloads.length; i++) {
+                    logger.info("query result:" + response_payloads[i].toString('utf8'));
+                }
+                callback(null,response_payloads[0].toString('utf8'));
+            } else {
+                logger.error('response_payloads is null');
+                callback('response_payloads is null');
+            }
+        },function(err){
+            logger.error('Failed to send query due to error: ' + err.stack ? err.stack : err);
+            callback('Failed to send query due to error: ' + err.stack ? err.stack : err);
+        }).catch(function(err){
+            logger.error('Failed to end to end test with error:' + err.stack ? err.stack : err);
+            callback('Failed to end to end test with error:' + err.stack ? err.stack : err);
         });
     };
 
@@ -1085,7 +1296,7 @@ var bcHFCAPI = function(keyValueStorePath){
     //     _bcHFCAPI.initSign = initSign;
         _bcHFCAPI.initBill = initBill;
     //2017/01/23 chaincode合并 end
-        _bcHFCAPI.logonUser = logonUser;
+    //    _bcHFCAPI.logonUser = logonUser;
         _bcHFCAPI.getChaincodeHandlers = function(){
              return chaincodeHandlers;
         };

@@ -1,6 +1,6 @@
 {
   "name": "fabric-ca-client",
-  "version": "0.1.2",
+  "version": "1.0.0-alpha",
   "main": "index.js",
   "repository": {
     "type": "gerrit",
@@ -28,8 +28,10 @@
     "winston": "^2.2.0"
   },
   "license": "Apache-2.0",
-  "licenses": [{
-    "type": "Apache-2.0",
-    "url": "https://github.com/hyperledger/fabric/blob/master/LICENSE"
-  }]
+  "licenses": [
+    {
+      "type": "Apache-2.0",
+      "url": "https://github.com/hyperledger/fabric/blob/master/LICENSE"
+    }
+  ]
 }

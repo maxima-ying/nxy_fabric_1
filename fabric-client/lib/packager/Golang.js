@@ -174,15 +174,15 @@ function generateTarGz(descriptors, dest) {
 			tasks.push(task);
 		}
 
-    // Block here until all entries have been gathered, and then finalize the
-    // tarball.  This should result in a flush of the entire pipeline before
-    // resolving the top-level promise.
-    Promise.all(tasks)
-				.then(() => {
+		// Block here until all entries have been gathered, and then finalize the
+		// tarball.  This should result in a flush of the entire pipeline before
+		// resolving the top-level promise.
+		Promise.all(tasks)
+			.then(() => {
 				pack.finalize();
-		})
-		.catch((err) => {
+			})
+			.catch((err) => {
 				reject(err);
-		});
+			});
 	});
 }

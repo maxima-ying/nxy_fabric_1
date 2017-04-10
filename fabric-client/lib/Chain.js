@@ -96,14 +96,6 @@ var Chain = class {
 		// services to help performance
 		this._preFetchMode = true;//to do - not in doc
 
-		/**
-		 * @member [CryptoSuite]{@link module:api.CryptoSuite} cryptoPrimitives
-		 * The crypto primitives object provides access to the crypto suite
-		 * for functions like sign, encrypt, decrypt, etc.
-		 * @memberof module:api.Chain.prototype
-		 */
-		this.cryptoPrimitives = utils.getCryptoSuite();
-
 		this._peers = [];
 		this._primary_peer = null; // if not set, will use the first peer on the list
 
@@ -913,6 +905,10 @@ var Chain = class {
 				var batch_timeout = _ordererConfigurationProto.BatchTimeout.decode(config_value.value.value);
 				logger.debug('loadConfigValue - %s   - BatchTimeout timeout value :: %s', group_name, batch_timeout.timeout);
 				break;
+			case 'ChannelRestrictions':
+				var channel_restrictions = _ordererConfigurationProto.ChannelRestrictions.decode(config_value.value.value);
+				logger.debug('loadConfigValue - %s   - ChannelRestrictions max_count value :: %s', group_name, channel_restrictions.max_count);
+				break;
 			case 'CreationPolicy':
 				var creation_policy = _ordererConfigurationProto.CreationPolicy.decode(config_value.value.value);
 				logger.debug('loadConfigValue - %s   - CreationPolicy policy value :: %s', group_name, creation_policy.policy);
@@ -1365,7 +1361,7 @@ var Chain = class {
 			var request = {
 				targets: [peer],
 				chaincodeId : 'cscc',
-				chainId: self._name,
+				chainId: '',
 				txId: txId,
 				nonce: nonce,
 				fcn : 'GetChannels',
@@ -1402,7 +1398,7 @@ var Chain = class {
 			}
 		).catch(
 			function(err) {
-				logger.error('Failed Channels Query. Error: %s', err.stack ? err.stack : err);
+				logger.error(util.format('Failed Channels Query. Error: %j', err.stack ? {error: err.stack} : err));
 				return Promise.reject(err);
 			}
 		);
@@ -1834,11 +1830,7 @@ var Chain = class {
 		var chaincodeActionPayload = new _transProto.ChaincodeActionPayload();
 		chaincodeActionPayload.setAction(chaincodeEndorsedAction);
 		var chaincodeProposalPayloadNoTrans = _proposalProto.ChaincodeProposalPayload.decode(chaincodeProposal.payload);
-		//chaincodeProposalPayloadNoTrans.setTransient(null);
-//		var payload_hash = this.cryptoPrimitives.hash(chaincodeProposalPayloadNoTrans.toBuffer());
-//		chaincodeActionPayload.setChaincodeProposalPayload(Buffer.from(payload_hash, 'hex')); //when we want to enforce visibilty
 		chaincodeActionPayload.setChaincodeProposalPayload(chaincodeProposalPayloadNoTrans.toBuffer());
-//		chaincodeActionPayload.setChaincodeProposalPayload(chaincodeProposal.getPayload()); //TODO  we should do this but it does not work
 
 		var transactionAction = new _transProto.TransactionAction();
 		transactionAction.setHeader(header.getSignatureHeader());
@@ -1902,8 +1894,16 @@ var Chain = class {
 				if(responses && Array.isArray(responses)) {
 					var results = [];
 					for(let i = 0; i < responses.length; i++) {
-						if(responses[i].response && responses[i].response.payload) {
-							results.push(responses[i].response.payload);
+						let response = responses[i];
+						if(response instanceof Error) {
+							results.push(response);
+						}
+						else if(response.response && response.response.payload) {
+							results.push(response.response.payload);
+						}
+						else {
+							logger.error('queryByChaincode - unknown or missing results in query ::'+results);
+							results.push(new Error(response));
 						}
 					}
 					return Promise.resolve(results);
@@ -2023,9 +2023,12 @@ var Chain = class {
 				responses.push(result.value());
 			  } else {
 				logger.debug('Chain-sendPeersProposal - Promise is rejected: '+result.reason());
-				// the reason() would simply return the error object that's difficult to print in logs
-				// wrap it in an object for better visibility
-				responses.push({error: result.reason().toString()});
+				if(result.reason() instanceof Error) {
+					responses.push(result.reason());
+				}
+				else {
+					responses.push(new Error(result.reason()));
+				}
 			  }
 			});
 			return responses;
@@ -2059,7 +2062,7 @@ var Chain = class {
 		var errorMsg = null;
 
 		if(request) {
-			var isQuery = request.chaincodeId == 'qscc';
+			var isQuery = (request.chaincodeId == 'qscc' || request.chaincodeId == 'cscc');
 			if(!request.chaincodeId) {
 				errorMsg = 'Missing "chaincodeId" parameter in the proposal request';
 			} else if(!request.chainId && !isQuery) {

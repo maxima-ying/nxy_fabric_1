@@ -139,38 +139,22 @@ function initPROD(callback) {
         //   });
         // }
           'loginUser':function(callback){
-              bc.logonUser(user,  function(error, res) {
-                  try {
-                      chaincodeConfig = LocalStore.loadChaincode();
-                  } catch (err) {
-                      logger.info(err);
-                  }
+              chaincodeConfig = LocalStore.loadChaincode();
 
-                  if (chaincodeConfig.bill) {
-                      logger.info('Chaincode已经被部署');
-                      logger.info(chaincodeConfig);
-                      var chaincodeHandlers = bc.getChaincodeHandlers();
-                      chaincodeHandlers['bill'] = chaincodeConfig.bill;
-                      //这里不callback,后面createChannel和deploy就不会做,也不用return
-                      bc.initialize_chain(function(msg){
-                          logger.info('initialize_chain call back: ' + msg);
-                      });
-                      //return;
-                  }else {
-                      if (error) {
-                          logger.error('注册用户%s失败。错误信息:%j', user.enrollmentID, error);
-                          logger.error('程序退出');
-                          process.exit(1);
-                      }
-                      else {
-                          logger.info('用户成功登录%s', user.enrollmentID);
-
-                          member = res;
-                          setMember(res);
-                          callback(null, member);
-                      }
-                  }
-              });
+              if (chaincodeConfig.bill) {
+                  logger.info('Chaincode已经被部署');
+                  logger.info(chaincodeConfig);
+                  var chaincodeHandlers = bc.getChaincodeHandlers();
+                  chaincodeHandlers['bill'] = chaincodeConfig.bill;
+                  //这里不callback,后面createChannel和deploy就不会做,也不用return
+                  //bc.initialize_chain(function(msg){
+                  //    logger.info('initialize_chain call back: ' + msg);
+                  //});
+                  //return;
+              }else{
+                  //继续下一步，create channel
+                  callback();
+              }
           },
 /*
           //TODO：临时加一下debug start
@@ -191,46 +175,60 @@ function initPROD(callback) {
               bc.create_Channel(function(error, res) {
                   if (error) {
                       logger.error('create_Channel失败。');
-                      logger.error('继续执行');//TODO：如何判断channel是否存在？
-                      //logger.error('程序退出');
-                      //process.exit(1);
-                      callback(null, member);
+                      //logger.error('继续执行');//TODO：如何判断channel是否存在？
+                      logger.error('程序退出');
+                      process.exit(1);
+                      //callback(null, member);
                   }
                   else {
                       logger.info('create_Channel成功。');
-                      callback(null, member);
+                      callback( null , null);
                   }
               });
           },
-          'joinChannel':function(callback){
-              bc.join_Channel(member, function(error, res) {
+          'joinChannelorg1':function(callback){
+              bc.join_Channel('org1', function(error, res) {
                   if (error) {
                       logger.error('join_Channel失败。');
-                      logger.error('继续执行');//TODO：如何判断channel是否已经join？
-                      //logger.error('程序退出');
-                      //process.exit(1);
-                      callback(null, member);
+                      //logger.error('继续执行');//TODO：如何判断channel是否已经join？
+                      logger.error('程序退出');
+                      process.exit(1);
+                      //callback(null, member);
                   }
                   else {
-                      logger.info('join_Channel成功。');
-                      callback(null, member);
+                      logger.info('org1 join_Channel成功。');
+                      callback(null, null);
                   }
               });
           },
 
-        'installProposal':function(callback){
-            logger.info('installProposal开始。');
-            bc.install_Proposal(member, 'bill', function(err,result) {
+        'installChainCodeOrg1':function(callback){
+            logger.info('org1 installProposal开始。');
+            bc.install_Proposal('org1', function(err) {
                 if (err) {
                     callback(err);
-                    logger.error('installProposal失败。');
+                    logger.error('org1 installProposal失败。');
                 }
                 else {
-                    callback(null, result);
-                    logger.info('installProposal成功。');
+                    callback(null);
+                    logger.info('org1 installProposal成功。');
                 }
             });
         },
+
+          'installChainCodeOrg2':function(callback){
+              logger.info('org2 installProposal开始。');
+              bc.install_Proposal('org2', function(err) {
+                  if (err) {
+                      callback(err);
+                      logger.error('org2 installProposal失败。');
+                  }
+                  else {
+                      callback(null);
+                      logger.info('org2 installProposal成功。');
+                  }
+              });
+          },
             /*
         'instantiateProposal':function(callback){
             bc.instantiate_Proposal(member, 'bill', functionName, args ,function(err,result) {
@@ -256,7 +254,8 @@ function initPROD(callback) {
 
 
         'initBill': function(callback){
-            var deployTx1 = bc.initBill(member, ['P1', '10000000', 'P2', "10000000"],function(err,result) {
+         //   var deployTx1 = bc.initBill(member, ['P1', '10000000', 'P2', "10000000"],function(err,result) {
+            var deployTx1 = bc.initBill('org1', ['P1', '10000000', 'P2', "10000000"],function(err,result) {
                 if (err) {
                     callback(err);
                     logger.error('initBill失败。');
