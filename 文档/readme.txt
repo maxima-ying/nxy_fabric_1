@@ -1,10 +1,6 @@
-#复制 test_hfc 目录到 $GOPATH\src\github.com\hyperledger\fabric_1.0_alpha\workspace\
-#也就是 $GOPATH\src\github.com\hyperledger\fabric_1.0_alpha\workspace\test_hfc 下面
 
 vagrant ssh
 
-#cd /opt/gopath/src/github.com/hyperledger/fabric_1.0_alpha/workspace/test_hfc
-#cd /opt/gopath/src/github.com/hyperledger/fabric/workspace/test_hfc
 cd ../fabric-sdk-node/test/fixtures
 
 docker-compose down
